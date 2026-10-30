@@ -1,5 +1,11 @@
 # cariehl.github.io
 
-Hosts the browser version of [Orbs of Magic](https://github.com/cariehl/orbs-of-magic-threejs): https://cariehl.github.io/
+Browser games, hosted at https://cariehl.github.io/. The front page (`index.html`) lists them, and each game lives in its own folder.
 
-These files are a build, not source. To update them, run `npm run build:pages` in orbs-of-magic-threejs and copy `dist/` here.
+| Game | URL | Source |
+| --- | --- | --- |
+| Orbs of Magic | https://cariehl.github.io/orbs/ | [orbs-of-magic-threejs](https://github.com/cariehl/orbs-of-magic-threejs) |
+
+The game folders hold builds, not source. To update Orbs of Magic, run `npm run build:pages` in orbs-of-magic-threejs, replace `orbs/` here with the contents of its `dist/`, and push to `master`.
+
+To add a game, put its static build (using relative asset paths) in a new folder, add a card for it in `index.html` with a 16:9 thumbnail in `img/`, and add a row to the table above.
