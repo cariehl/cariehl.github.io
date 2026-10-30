@@ -8,6 +8,6 @@ Browser games, hosted at https://cariehl.github.io/. The front page (`index.html
 
 The game folders hold builds, not source. To update Orbs of Magic, run `npm run build:pages` in orbs-of-magic-threejs, replace `orbs/` here with the contents of its `dist/`, and push to `master`.
 
-Commentary for Orbs of Magic goes in `commentary/orbs.md` (Markdown). The game's menu shows a Commentary button only while that file exists. Keep it outside `orbs/`, which is replaced on every update.
+Commentary for Orbs of Magic goes in `commentary/orbs.md` (Markdown). The game's menu shows a Commentary button only while that file exists. Keep it outside `orbs/`, which is replaced on every update. Image paths are relative to `commentary/`, and `![alt text](photo.jpg "Caption")` adds a caption under an image.
 
 To add a game, put its static build (using relative asset paths) in a new folder, add a card for it in `index.html` with a 16:9 thumbnail in `img/`, and add a row to the table above.
