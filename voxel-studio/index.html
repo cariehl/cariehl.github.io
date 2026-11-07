@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voxel Studio</title>
+<meta name="description" content="Build voxel models and animate them like pixel art, by hand or from bones.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div class="brand"><span class="logo" aria-hidden="true"><i></i><i></i><i></i></span><b>Voxel Studio</b></div>
+    <input id="pname" aria-label="Project name" spellcheck="false" maxlength="60">
+    <nav id="tabs" role="tablist">
+      <button class="tab on" data-tab="model" title="Build the model (1)">Model</button>
+      <button class="tab" data-tab="frames" title="Draw animations frame by frame (2)">Frames</button>
+      <button class="tab" data-tab="rig" title="Add bones and give voxels to them (3)">Rig</button>
+      <button class="tab" data-tab="pose" title="Pose the bones and bake voxel animations (4)">Pose</button>
+    </nav>
+    <div class="acts">
+      <button class="ib" data-act="undo" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 7 4 12l5 5M4 12h11a5 5 0 0 1 0 10h-3"/></svg></button>
+      <button class="ib" data-act="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><svg viewBox="0 0 24 24"><path d="m15 7 5 5-5 5M20 12H9a5 5 0 0 0 0 10h3"/></svg></button>
+      <span class="sep"></span>
+      <button class="tb" data-act="new">New</button>
+      <button class="tb" data-act="open">Open</button>
+      <button class="tb" data-act="save">Save</button>
+      <button class="tb" data-act="export">Export</button>
+      <button class="ib" data-act="help" title="Controls" aria-label="Controls">?</button>
+    </div>
+  </header>
+  <div id="tools"></div>
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="viewbar">
+      <button data-view="iso" title="Three-quarter view">3/4</button>
+      <button data-view="front" title="Front">Front</button>
+      <button data-view="side" title="Side">Side</button>
+      <button data-view="top" title="Top">Top</button>
+      <button data-view="persp" class="tg" title="Perspective camera">Persp</button>
+      <button data-view="edges" class="tg" title="Voxel outlines">Edges</button>
+    </div>
+    <div id="status"></div>
+  </div>
+  <aside id="panel"></aside>
+  <footer id="timeline"></footer>
+</div>
+<div id="modal" hidden></div>
+<div id="toast" role="status"></div>
+<input type="file" id="file" accept=".json,application/json" hidden>
+
+<script src="js/grid.js"></script>
+<script src="js/rig.js"></script>
+<script src="js/render.js"></script>
+<script src="js/glb.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

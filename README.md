@@ -10,6 +10,7 @@ Browser games, hosted at https://cariehl.github.io/. The front page (`index.html
 | Hexmancer | https://cariehl.github.io/hexmancer/ | This repo (single file, `hexmancer/index.html`) |
 | Overcharge | https://cariehl.github.io/overcharge/ | This repo (single file, `overcharge/index.html`) |
 | MechScape | https://cariehl.github.io/mechscape/ | [mechscape-threejs](https://github.com/cariehl/mechscape-threejs) (private) |
+| Voxel Studio (app) | https://cariehl.github.io/voxel-studio/ | [browser-games](https://github.com/cariehl/browser-games) `apps/voxel-studio` |
 
 The game folders hold builds, not source. To update Orbs of Magic, run `npm run build:pages` in orbs-of-magic-threejs, replace `orbs/` here with the contents of its `dist/`, and push to `master`.
 
