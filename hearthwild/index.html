@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Hearthwild: an isometric hex-grid wilderness survival simulation. Three settlers, a cold valley, and very deep systems.">
+<meta name="theme-color" content="#14130f">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+<title>Hearthwild</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Cormorant+Garamond:wght@600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="view"></canvas>
+  <header id="top">
+    <div class="brand">Hearthwild</div>
+    <div id="clock" class="pill"></div>
+    <div id="weather" class="pill"></div>
+    <div id="speeds" class="seg">
+      <button data-speed="0" title="Pause (Space)">❚❚</button>
+      <button data-speed="1" title="Normal (1)">▶</button>
+      <button data-speed="2" title="Fast (2)">▶▶</button>
+      <button data-speed="3" title="Faster (3)">▶▶▶</button>
+      <button data-speed="4" title="Fastest (4)">»</button>
+    </div>
+    <div class="spacer"></div>
+    <button id="menuBtn" class="btn">Menu</button>
+  </header>
+  <aside id="colonists"></aside>
+  <div id="alerts"></div>
+  <aside id="inspector" hidden></aside>
+  <nav id="toolbar"></nav>
+  <div id="drawer" hidden></div>
+  <canvas id="minimap" title="Minimap: click to jump"></canvas>
+  <div id="hint"></div>
+  <div id="toast"></div>
+  <div id="overlay" hidden></div>
+</div>
+<script type="module" src="src/ui/main.js"></script>
+</body>
+</html>
