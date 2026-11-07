@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Independence to Santa Fe, 1844. Take your missing brother's wagon down the trade road, and make every small decision count: what to buy, what to carry, what to leave behind.">
+<meta name="theme-color" content="#2b2118">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>">
+<title>Waybill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Spectral:ital,wght@0,400;0,600;1,400&family=Homemade+Apple&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="title" class="screen">
+  <div class="title-card">
+    <p class="kicker">Independence to Santa Fe &middot; 1844</p>
+    <h1>Waybill</h1>
+    <p class="lede">Two years ago your brother Elias took a wagon of goods down the Santa Fe road and did not come back. Last fall a teamster brought the wagon home, with Elias's ledger and a note for $1,200 that a merchant in Independence would like paid.</p>
+    <p class="lede">This spring the Mexican ports are open again. You have the wagon, the ledger, and $1,500.</p>
+    <label class="name">Your name <input id="nameIn" maxlength="20" value="Ruth" autocomplete="off"></label>
+    <div class="title-btns">
+      <button class="btn big" id="newBtn">Begin</button>
+      <button class="btn big ghost" id="contBtn" hidden>Continue</button>
+    </div>
+    <p class="small">A trail game of small decisions. Progress saves in this browser.</p>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header id="top">
+    <div class="tdate"><b id="date">May 14</b><small id="dayN">Day 1</small></div>
+    <div class="tplace"><b id="place">Independence</b><small id="placeSub">Missouri</small></div>
+    <div class="tmoney"><b id="money">$1,500</b><small>in hand</small></div>
+    <button class="icon-btn" id="menuBtn" aria-label="Menu">&#9776;</button>
+  </header>
+  <main id="main">
+    <section id="left">
+      <div id="stage"><canvas id="cv"></canvas><div id="stageLabel"></div></div>
+      <div id="gauges"></div>
+      <div id="mapWrap" class="desk-only"></div>
+    </section>
+    <section id="right">
+      <nav id="tabs">
+        <button class="tab on" data-tab="trail">Trail</button>
+        <button class="tab" data-tab="wagon">Wagon</button>
+        <button class="tab" data-tab="party">Party</button>
+        <button class="tab mob-only" data-tab="map">Map</button>
+        <button class="tab" data-tab="ledger">Ledger<span class="dot" hidden></span></button>
+      </nav>
+      <div id="panel"></div>
+    </section>
+  </main>
+</div>
+
+<div class="overlay" id="ov" hidden><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/events.js"></script>
+<script src="js/core.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
