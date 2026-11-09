@@ -346,6 +346,7 @@ async function onEvent(type, d, g) {
       await callout(`${roundName(g.round)}${g.honba ? ` · ${g.honba} honba` : ''}`, null, 1000);
       break;
     case 'draw':
+      ui.lastDiscard = null; // the discard can no longer be called
       render();
       break;
     case 'discard':
@@ -354,6 +355,7 @@ async function onEvent(type, d, g) {
       if (d.riichi) await callout('Riichi', d.seat, 750);
       break;
     case 'call':
+      ui.lastDiscard = null;
       render();
       await callout({ pon: 'Pon', chi: 'Chi', minkan: 'Kan' }[d.type], d.seat, 650);
       break;
@@ -445,6 +447,14 @@ function render(fresh = false) {
   renderActions();
   renderWaits();
   $('#dock').classList.toggle('acting', !!$('#actions').childElementCount);
+  updateMatches();
+}
+
+// Highlight tiles on the table (discards and open melds) that match the tile picked in hand.
+function updateMatches() {
+  const pick = ui.selected ?? ui.hover;
+  const t = pick === null || pick === undefined ? -1 : typeOf(pick);
+  for (const e of document.querySelectorAll('#table .tile[data-id]')) e.classList.toggle('match', typeOf(+e.dataset.id) === t);
 }
 
 function currentTurnSeat() {
@@ -469,6 +479,8 @@ function renderHand() {
     const dim = t && !allowed.has(id);
     const e = tileEl(id, { cls: (dim ? 'dim' : '') + (gap ? ' gap' : '') + (ui.selected === id ? ' sel' : '') + (ui.react && typeOf(id) === typeOf(ui.react.tile) ? ' hl' : '') });
     e.onclick = () => onTileTap(id);
+    e.onpointerenter = (ev) => { if (ev.pointerType === 'mouse') { ui.hover = id; updateMatches(); } };
+    e.onpointerleave = () => { if (ui.hover === id) { ui.hover = null; updateMatches(); } };
     hand.appendChild(e);
   };
   ids.forEach((id) => add(id, false));
