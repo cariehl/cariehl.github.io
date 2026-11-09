@@ -623,8 +623,9 @@ function tilesRow(ids) {
 }
 
 function winTitle(w, kind, names) {
-  if (kind === 'tsumo') return `${names[w.seat]} wins by tsumo`;
-  return `${names[w.seat]} wins by ron from ${names[w.from]}`;
+  const verb = w.seat === 0 ? 'win' : 'wins';
+  if (kind === 'tsumo') return `${names[w.seat]} ${verb} by tsumo`;
+  return `${names[w.seat]} ${verb} by ron from ${names[w.from]}`;
 }
 
 function deltasEl(d, scoresAfter) {
@@ -644,7 +645,7 @@ function winBlock(w, rec, names) {
   const b = el('div', 'win-block');
   b.appendChild(el('h2', '', winTitle(w, rec.kind, names)));
   const pointsText = w.limit || `${w.han} han ${w.fu} fu`;
-  b.appendChild(el('p', 'sub', `${roundName(rec.round)}${rec.honba ? `, ${rec.honba} honba` : ''} · ${pointsText}${w.pao !== null && w.pao !== undefined ? ` · ${names[w.pao]} is liable` : ''}`));
+  b.appendChild(el('p', 'sub', `${roundName(rec.round)}${rec.honba ? `, ${rec.honba} honba` : ''} · ${pointsText}${w.pao !== null && w.pao !== undefined ? ` · ${names[w.pao]} ${w.pao === 0 ? "are" : "is"} liable` : ''}`));
   b.appendChild(handRow(w.hand, w.melds, w.tile));
   const dora = el('div', 'res-dora');
   const d1 = el('div', '', '<small>Dora indicators</small>');
