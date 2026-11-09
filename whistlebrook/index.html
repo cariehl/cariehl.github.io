@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Whistlebrook</title>
+  <meta name="description" content="Lay track, build a little town and run steam trains for its townsfolk.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <header id="top">
+    <div class="logo"><span class="puff"></span>Whistlebrook</div>
+    <div class="stats">
+      <div class="stat" title="Coins"><span class="coin"></span><b id="coins">0</b></div>
+      <div class="stat" title="Townsfolk"><span class="ico">&#9786;</span><b id="pop">0</b></div>
+      <div class="stat" title="Passengers carried"><span class="ico">&#127915;</span><b id="riders">0</b></div>
+      <div class="stat clock" title="Day"><span id="sunmoon" class="sunmoon"></span><b id="day">Day 1</b></div>
+    </div>
+    <div class="buttons">
+      <button id="speed" class="pill" title="Speed (Space pauses)">1x</button>
+      <button id="book" class="pill" title="Town book: milestones">Town book</button>
+      <button id="sound" class="pill" title="Sound">Sound on</button>
+      <button id="menu" class="pill" title="New town, help">&#9776;</button>
+    </div>
+  </header>
+
+  <nav id="tools"></nav>
+  <div id="hint"></div>
+  <div id="bubbles"></div>
+  <div id="toasts"></div>
+  <aside id="panel" hidden></aside>
+  <div id="modal" hidden></div>
+
+  <div id="loading"><div class="logo big"><span class="puff"></span>Whistlebrook</div><div class="bar"><i id="loadbar"></i></div><p id="loadmsg">Unpacking the toy box...</p></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
