@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="description" content="Riichi mahjong against six bots with their own habits: a caller, a wall, a closed-hand purist, a value hunter, a gambler and a steady hand.">
+<meta name="theme-color" content="#14231f">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏮</text></svg>">
+<title>Lantern Riichi</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="menu" class="screen">
+  <div class="menu-card">
+    <div class="lanterns" aria-hidden="true"><span>🏮</span><span>🏮</span><span>🏮</span></div>
+    <h1>Lantern Riichi</h1>
+    <p class="lede">Four-player riichi mahjong at a late-night table. Pick three opponents; each one plays its own way.</p>
+
+    <div class="wallet">
+      <span class="av" id="walletAv">🙂</span>
+      <span class="wallet-txt"><b id="walletCoins">🪙 10,000</b><small id="walletDebt">No debt</small></span>
+      <button class="btn ghost small" id="bankBtn">Bank</button>
+      <button class="btn ghost small" id="shopBtn">Shop</button>
+    </div>
+
+    <h2>Opponents <small id="pickCount">3 of 3</small></h2>
+    <div id="personaGrid" class="persona-grid"></div>
+    <div class="row-btns"><button class="btn ghost small" id="randomBtn">Random three</button></div>
+
+    <h2>Length</h2>
+    <div class="seg" id="lengthSeg">
+      <button data-v="east">East round <small>4+ hands</small></button>
+      <button data-v="south">Half game <small>East + South</small></button>
+    </div>
+
+    <h2>Table</h2>
+    <div class="seg stakes" id="stakeSeg"></div>
+    <p class="short-note" id="shortNote" hidden></p>
+
+    <div class="menu-btns">
+      <button class="btn big" id="startBtn">Sit down</button>
+      <button class="btn big ghost" id="continueBtn" hidden>Continue game</button>
+    </div>
+    <div class="row-btns">
+      <button class="btn ghost" id="historyBtn">Game history</button>
+      <button class="btn ghost" id="rulesBtn">Rules &amp; yaku</button>
+      <button class="btn ghost" id="settingsBtn">Settings</button>
+    </div>
+  </div>
+</div>
+
+<div id="game" class="screen" hidden>
+  <header id="bar">
+    <button class="icon-btn" id="pauseBtn" aria-label="Menu">☰</button>
+    <div class="bar-round"><b id="roundName">East 1</b><small id="roundSub">0 honba</small></div>
+    <div class="bar-dora"><small>Dora</small><div id="doraRow" class="tiles"></div></div>
+    <div class="bar-wall"><b id="wallLeft">70</b><small>left</small></div>
+  </header>
+  <div id="opps">
+    <div class="plate" data-rel="3"></div>
+    <div class="plate" data-rel="2"></div>
+    <div class="plate" data-rel="1"></div>
+  </div>
+  <div id="tableWrap">
+    <div id="table">
+      <div class="layer" data-rel="0"><div class="river"></div><div class="melds"></div><div class="seatinfo"></div><div class="stick"></div></div>
+      <div class="layer" data-rel="1"><div class="river"></div><div class="melds"></div><div class="seatinfo"></div><div class="stick"></div></div>
+      <div class="layer" data-rel="2"><div class="river"></div><div class="melds"></div><div class="seatinfo"></div><div class="stick"></div></div>
+      <div class="layer" data-rel="3"><div class="river"></div><div class="melds"></div><div class="seatinfo"></div><div class="stick"></div></div>
+      <div id="center"><b id="centerRound">East 1</b><small id="centerWall">70 left</small></div>
+      <div id="callout" hidden></div>
+    </div>
+  </div>
+  <div id="dock">
+    <div id="waits" hidden></div>
+    <div id="actions"></div>
+    <div id="hand" class="tiles"></div>
+  </div>
+</div>
+
+<div id="history" class="screen" hidden>
+  <header class="page-bar"><button class="icon-btn" id="historyBack" aria-label="Back">←</button><h1>Game history</h1><span></span></header>
+  <div id="historyBody" class="page-body"></div>
+</div>
+
+<div id="rules" class="screen" hidden>
+  <header class="page-bar"><button class="icon-btn" id="rulesBack" aria-label="Back">←</button><h1>Rules &amp; yaku</h1><span></span></header>
+  <div id="rulesBody" class="page-body"></div>
+</div>
+
+<div id="sheet" hidden><div class="sheet-card" id="sheetCard"></div></div>
+
+<script type="module" src="js/ui.js"></script>
+</body>
+</html>
