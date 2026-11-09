@@ -470,8 +470,10 @@ function renderHand() {
   const t = ui.turn;
   let ids = p.hand.slice().sort((a, b) => a - b);
   let drawn = null;
-  if (t && t.opts.drawn !== null && p.hand.includes(t.opts.drawn)) {
-    drawn = t.opts.drawn;
+  // the freshly drawn tile sits apart on the right, also while riichi discards it automatically
+  const ld = H.lastDraw;
+  if (p.hand.length % 3 === 2 && ld && ld.seat === 0 && p.hand.includes(ld.tile)) {
+    drawn = ld.tile;
     ids = ids.filter((x) => x !== drawn);
   }
   const allowed = t ? new Set(ui.riichiMode ? t.opts.riichi : t.opts.discards) : null;
@@ -703,7 +705,18 @@ function endSheet(res, g, money) {
     }
     const btns = el('div', 'sheet-btns');
     btns.appendChild(btn('History', 'ghost', () => { done(); game = null; renderHistory(); show('history'); }));
-    btns.appendChild(btn('Play again', 'big', () => { done(); game = null; renderMenu(); show('menu'); }));
+    btns.appendChild(btn('Main menu', 'ghost', () => { done(); game = null; renderMenu(); show('menu'); }));
+    btns.appendChild(btn('Play again', 'big', () => {
+      done();
+      game = null;
+      // same opponents, length and table, if the wallet covers the buy-in
+      settings.opponents = g.opponents.slice();
+      settings.length = g.length;
+      settings.stake = g.stake.id;
+      saveSettings();
+      if (W.canAfford(wallet, g.stake)) startGame(null);
+      else { renderMenu(); show('menu'); }
+    }));
     card.appendChild(btns);
   });
 }
