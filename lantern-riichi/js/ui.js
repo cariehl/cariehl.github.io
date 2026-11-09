@@ -62,7 +62,7 @@ function tileEl(id, { back = false, side = false, cls = '' } = {}) {
     e.dataset.id = id;
     e.title = tileLongName(typeOf(id)) + (isRed(id) ? ' (red)' : '');
     const t = typeOf(id);
-    const lbl = el('b', 'lbl s' + (t < 27 ? Math.floor(t / 9) : 3), t < 27 ? `${t % 9 + 1}<small>${'mps'[Math.floor(t / 9)]}</small>` : tileName(t));
+    const lbl = el('b', 'lbl s' + (t < 27 ? Math.floor(t / 9) : 3), t < 27 ? `${t % 9 + 1}<i class="sfx">${'mps'[Math.floor(t / 9)]}</i>` : tileName(t));
     e.appendChild(lbl);
   }
   return e;
