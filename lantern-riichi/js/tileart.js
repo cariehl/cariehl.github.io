@@ -74,12 +74,41 @@ function face(t, red) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 80">${body}</svg>`;
 }
 
+// "Clear" style: the suit symbol in the top-left, a big number (or letter) in the bottom-right.
+const NUM_FONT = `system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif`;
+function clearFace(t, red) {
+  let suit = '', mark = '', markColor = INK, size = 41;
+  if (t < 27) {
+    const s = Math.floor(t / 9), n = (t % 9) + 1;
+    mark = String(n);
+    markColor = red ? RED : [RED, BLUE, GREEN][s];
+    if (s === 0) suit = `<text x="3" y="37" font-size="36" font-family="${FONT}" font-weight="700" fill="${red ? RED : INK}">萬</text>`;
+    else if (s === 1) suit = circle(21, 21, 17, red ? RED : BLUE);
+    else suit = stick(12, 22, red ? RED : GREEN, 36, 9) + stick(27, 22, red ? RED : GREEN, 36, 9);
+  } else if (t < 31) {
+    suit = `<text x="3" y="36" font-size="34" font-family="${FONT}" font-weight="700" fill="${INK}">${'東南西北'[t - 27]}</text>`;
+    mark = 'ESWN'[t - 27];
+  } else if (t === 31) {
+    suit = `<rect x="5" y="5" width="28" height="34" rx="2" fill="none" stroke="${BLUE}" stroke-width="3.4"/>`;
+    mark = 'Wh'; markColor = BLUE; size = 30;
+  } else {
+    const col = t === 32 ? GREEN : RED;
+    suit = `<text x="3" y="36" font-size="34" font-family="${FONT}" font-weight="700" fill="${col}">${t === 32 ? '發' : '中'}</text>`;
+    mark = t === 32 ? 'G' : 'R'; markColor = col;
+  }
+  const num = `<text x="57" y="77" font-size="${size}" text-anchor="end" font-family="${NUM_FONT}" font-weight="800" fill="${markColor}">${mark}</text>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 80">${suit}${num}</svg>`;
+}
+
+let style = 'classic';
+export function setTileStyle(s) { style = s === 'clear' ? 'clear' : 'classic'; }
+
 const cache = new Map();
 export function faceUrl(t, red = false) {
-  const key = t * 2 + (red ? 1 : 0);
+  const key = `${style}${t * 2 + (red ? 1 : 0)}`;
   let u = cache.get(key);
   if (!u) {
-    u = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(face(t, red))}")`;
+    u = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(style === 'clear' ? clearFace(t, red) : face(t, red))}")`;
     cache.set(key, u);
   }
   return u;

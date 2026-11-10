@@ -1,7 +1,7 @@
 // The page: menu, table, result sheets, history and rules.
 
 import { typeOf, isRed, counts, WIND_KANJI, WIND_NAMES, doraOf, tileLongName, tileName } from './tiles.js';
-import { faceUrl } from './tileart.js';
+import { faceUrl, setTileStyle } from './tileart.js';
 import { waitsOf, shanten } from './shanten.js';
 import { Game, roundName, RULES } from './game.js';
 import { PERSONAS, personaById, botTurn, botReaction } from './bots.js';
@@ -24,7 +24,7 @@ const signed = (n) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '0');
 const SETTINGS_KEY = 'lantern-riichi.settings.v1';
 const SAVE_KEY = 'lantern-riichi.save.v1';
 const settings = Object.assign(
-  { opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileLabels: false, speed: 'normal', tapMode: 'auto' },
+  { opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileLabels: false, tileStyle: 'classic', speed: 'normal', tapMode: 'auto' },
   readJSON(SETTINGS_KEY) || {},
 );
 function readJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } }
@@ -45,7 +45,8 @@ function applyLooks() {
     const c = W.cosmeticById(wallet.equipped[kind]);
     if (c) for (const [k, v] of Object.entries(c.vars)) root.style.setProperty(k, v);
   }
-  document.body.classList.toggle('labels', !!settings.tileLabels);
+  document.body.classList.toggle('labels', !!settings.tileLabels && settings.tileStyle !== 'clear');
+  setTileStyle(settings.tileStyle);
 }
 function myAvatar() {
   return W.cosmeticById(wallet.equipped.avatar) || W.cosmeticById('av-smile');
@@ -439,7 +440,7 @@ function render(fresh = false) {
     const plate = $(`.plate[data-rel="${s}"]`);
     if (plate) {
       const st = seats[s];
-      plate.innerHTML = `<span class="av" style="--c:${st.color}">${st.emoji}</span><span class="who"><b>${st.name}${p.riichi ? '<span class="riichi-tag">Riichi</span>' : ''}</b><small>${WIND_NAMES[wind]}${wind === 0 ? ' · dealer' : ''}</small><small>${st.style}</small></span><span class="dir">${['', 'right', 'across', 'left'][s]}</span>`;
+      plate.innerHTML = `<span class="av" style="--c:${st.color}">${st.emoji}</span><span class="who"><b>${st.name}</b><small>${p.riichi ? '<span class="riichi-tag">Riichi</span>' : ''}${WIND_NAMES[wind]}${wind === 0 ? ' · dealer' : ''}</small><small>${st.style}</small></span><span class="dir">${['', 'right', 'across', 'left'][s]}</span>`;
       plate.classList.toggle('turn', turnSeat === s);
     }
   }
@@ -751,10 +752,11 @@ function settingToggles(card) {
     const s = el('select');
     for (const [v, t] of options) { const o = el('option', '', t); o.value = v; s.appendChild(o); }
     s.value = settings[key];
-    s.onchange = () => { settings[key] = s.value; saveSettings(); };
+    s.onchange = () => { settings[key] = s.value; saveSettings(); applyLooks(); if (game) render(); };
     row.appendChild(s);
     card.appendChild(row);
   };
+  sel('tileStyle', 'Tile style', 'Classic faces, or Clear: suit at top-left and a big number at bottom-right', [['classic', 'Classic'], ['clear', 'Clear']]);
   sel('speed', 'Bot speed', 'How long the bots think', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]);
   sel('tapMode', 'Discarding', 'Tap once, or tap to lift then tap again', [['auto', 'Auto (mouse: once)'], ['one', 'One tap'], ['two', 'Two taps']]);
 }

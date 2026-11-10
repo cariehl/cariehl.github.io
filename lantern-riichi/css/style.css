@@ -118,7 +118,7 @@ h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 600; letter-sp
 .plate small { display: block; color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .plate .dir { position: absolute; right: 6px; top: 3px; font-size: 10px; color: var(--muted); }
 .plate.turn { box-shadow: inset 0 0 0 2px var(--accent), 0 0 14px rgba(232, 163, 61, 0.3); }
-.plate .riichi-tag { color: #fff; background: var(--accent-2); border-radius: 4px; padding: 0 4px; font-size: 10px; margin-left: 4px; vertical-align: 2px; }
+.plate .riichi-tag { color: #fff; background: var(--accent-2); border-radius: 4px; padding: 0 4px; font-size: 10px; font-weight: 700; margin-right: 4px; vertical-align: 1px; }
 
 #tableWrap { grid-area: table; min-height: 0; container-type: size; display: flex; align-items: center; justify-content: center; }
 #table { position: relative; width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); container-type: size; }
