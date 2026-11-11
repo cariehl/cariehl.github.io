@@ -24,7 +24,7 @@ const signed = (n) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '0');
 const SETTINGS_KEY = 'lantern-riichi.settings.v1';
 const SAVE_KEY = 'lantern-riichi.save.v1';
 const settings = Object.assign(
-  { opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', speed: 'normal', tapMode: 'auto' },
+  { opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, speed: 'normal', tapMode: 'auto' },
   readJSON(SETTINGS_KEY) || {},
 );
 function readJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } }
@@ -49,6 +49,7 @@ function applyLooks() {
     if (c) for (const [k, v] of Object.entries(c.vars)) root.style.setProperty(k, v);
   }
   document.body.classList.toggle('labels', settings.tileStyle === 'labels');
+  document.body.classList.toggle('red-tint', !!settings.redTint);
   setTileStyle(settings.tileStyle);
 }
 function myAvatar() {
@@ -750,6 +751,7 @@ function settingToggles(card) {
   tog('showWaits', 'Show waits', 'Show which tiles finish a ready hand, and warn on furiten');
   tog('autoWin', 'Auto-win', 'Declare ron and tsumo for you');
   tog('noCalls', 'No calls', 'Skip pon, chi and kan prompts');
+  tog('redTint', 'Red five shading', 'Give red fives a red-tinted tile');
   const sel = (key, label, hint, options) => {
     const row = el('label', 'toggle', `<span>${label}<small>${hint}</small></span>`);
     const s = el('select');
