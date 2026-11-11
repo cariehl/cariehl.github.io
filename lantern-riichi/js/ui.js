@@ -55,7 +55,8 @@ function myAvatar() {
 // ---------------------------------------------------------------- tiles
 
 function tileEl(id, { back = false, side = false, cls = '' } = {}) {
-  const e = el('div', 'tile' + (back ? ' back' : '') + (side ? ' side' : '') + (cls ? ' ' + cls : ''));
+  const red = !back && id !== null && id !== undefined && isRed(id);
+  const e = el('div', 'tile' + (back ? ' back' : '') + (side ? ' side' : '') + (red ? ' red' : '') + (cls ? ' ' + cls : ''));
   if (!back && id !== null && id !== undefined) {
     const f = el('i');
     f.style.backgroundImage = faceUrl(typeOf(id), isRed(id));
