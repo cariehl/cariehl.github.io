@@ -24,11 +24,14 @@ const signed = (n) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '0');
 const SETTINGS_KEY = 'lantern-riichi.settings.v1';
 const SAVE_KEY = 'lantern-riichi.save.v1';
 const settings = Object.assign(
-  { opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileLabels: false, tileStyle: 'classic', speed: 'normal', tapMode: 'auto' },
+  { opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', speed: 'normal', tapMode: 'auto' },
   readJSON(SETTINGS_KEY) || {},
 );
 function readJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } }
 function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable */ } }
+// older saves kept corner labels as their own switch
+if (settings.tileLabels && settings.tileStyle !== 'clear') settings.tileStyle = 'labels';
+delete settings.tileLabels;
 function saveSettings() { writeJSON(SETTINGS_KEY, settings); }
 const SPEED = { slow: 900, normal: 520, fast: 220 };
 
@@ -45,7 +48,7 @@ function applyLooks() {
     const c = W.cosmeticById(wallet.equipped[kind]);
     if (c) for (const [k, v] of Object.entries(c.vars)) root.style.setProperty(k, v);
   }
-  document.body.classList.toggle('labels', !!settings.tileLabels && settings.tileStyle !== 'clear');
+  document.body.classList.toggle('labels', settings.tileStyle === 'labels');
   setTileStyle(settings.tileStyle);
 }
 function myAvatar() {
@@ -744,7 +747,6 @@ function settingToggles(card) {
     row.appendChild(input);
     card.appendChild(row);
   };
-  tog('tileLabels', 'Corner labels', 'Show the number and suit (5m, 3p, 7s) or honor (E, S, W, N, Wh, G, R) in the corner of each tile');
   tog('showWaits', 'Show waits', 'Show which tiles finish a ready hand, and warn on furiten');
   tog('autoWin', 'Auto-win', 'Declare ron and tsumo for you');
   tog('noCalls', 'No calls', 'Skip pon, chi and kan prompts');
@@ -757,7 +759,7 @@ function settingToggles(card) {
     row.appendChild(s);
     card.appendChild(row);
   };
-  sel('tileStyle', 'Tile style', 'Classic faces, or Clear: suit at top-left and a big number at bottom-right', [['classic', 'Classic'], ['clear', 'Clear']]);
+  sel('tileStyle', 'Tile style', 'Classic faces; Classic with a number and suit label (5m, 3p, E) in the corner; or Clear: suit at top-left and a big number at bottom-right', [['classic', 'Classic'], ['labels', 'Classic + corner labels'], ['clear', 'Clear']]);
   sel('speed', 'Bot speed', 'How long the bots think', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]);
   sel('tapMode', 'Discarding', 'Tap once, or tap to lift then tap again', [['auto', 'Auto (mouse: once)'], ['one', 'One tap'], ['two', 'Two taps']]);
 }
