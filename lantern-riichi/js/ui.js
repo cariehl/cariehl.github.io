@@ -106,7 +106,7 @@ function meldEl(m) {
 
 let game = null;
 let seats = null; // [{ name, emoji, color, persona, style }]
-const ui = { turn: null, react: null, selected: null, riichiMode: false, reveal: false, kanPick: false };
+const ui = { turn: null, react: null, selected: null, hover: null, riichiMode: false, reveal: false, kanPick: false };
 let pointerKind = 'mouse';
 addEventListener('pointerdown', (e) => { pointerKind = e.pointerType || 'mouse'; }, true);
 
@@ -483,16 +483,33 @@ function renderHand() {
     ids = ids.filter((x) => x !== drawn);
   }
   const allowed = t ? new Set(ui.riichiMode ? t.opts.riichi : t.opts.discards) : null;
+  const ready = t && settings.showWaits && !p.riichi ? readyDiscards(p) : null;
+  if (ui.hover !== null && (!t || !allowed.has(ui.hover))) ui.hover = null;
   const add = (id, gap) => {
     const dim = t && !allowed.has(id);
-    const e = tileEl(id, { cls: (dim ? 'dim' : '') + (gap ? ' gap' : '') + (ui.selected === id ? ' sel' : '') + (ui.react && typeOf(id) === typeOf(ui.react.tile) ? ' hl' : '') });
+    const e = tileEl(id, { cls: (dim ? 'dim' : '') + (gap ? ' gap' : '') + (ui.selected === id ? ' sel' : '') + (!dim && ready?.has(typeOf(id)) ? ' ready' : '') + (ui.react && typeOf(id) === typeOf(ui.react.tile) ? ' hl' : '') });
     e.onclick = () => onTileTap(id);
-    e.onpointerenter = (ev) => { if (ev.pointerType === 'mouse') { ui.hover = id; updateMatches(); } };
-    e.onpointerleave = () => { if (ui.hover === id) { ui.hover = null; updateMatches(); } };
+    // mouse: hovering previews the waits and matching table tiles, since one click discards
+    e.onpointerenter = (ev) => { if (ev.pointerType === 'mouse') { ui.hover = id; updateMatches(); renderWaits(); } };
+    e.onpointerleave = () => { if (ui.hover === id) { ui.hover = null; updateMatches(); renderWaits(); } };
     hand.appendChild(e);
   };
   ids.forEach((id) => add(id, false));
   if (drawn !== null) add(drawn, true);
+}
+
+// Tile types in a 14-tile hand whose discard leaves the hand ready (tenpai).
+function readyDiscards(p) {
+  const out = new Set();
+  if (p.hand.length % 3 !== 2) return out;
+  const c = counts(p.hand);
+  for (let t = 0; t < 34; t++) {
+    if (!c[t]) continue;
+    c[t]--;
+    if (shanten(c, p.melds.length) === 0) out.add(t);
+    c[t]++;
+  }
+  return out;
 }
 
 function onTileTap(id) {
@@ -502,6 +519,7 @@ function onTileTap(id) {
   if (!allowed.includes(id)) return;
   const oneTap = settings.tapMode === 'one' || (settings.tapMode === 'auto' && pointerKind === 'mouse');
   if (oneTap || ui.selected === id) {
+    ui.hover = null;
     t.resolve({ type: 'discard', tile: id, riichi: ui.riichiMode });
     render();
     return;
@@ -571,8 +589,9 @@ function renderWaits() {
   let hand = p.hand.slice();
   let label = 'Waiting on';
   if (hand.length % 3 === 2) {
-    if (ui.selected === null || !ui.turn) return;
-    hand.splice(hand.indexOf(ui.selected), 1);
+    const pick = ui.selected ?? ui.hover;
+    if (pick === null || !ui.turn || !hand.includes(pick)) return;
+    hand.splice(hand.indexOf(pick), 1);
     label = 'Discard this to wait on';
   }
   const c = counts(hand);
@@ -748,7 +767,7 @@ function settingToggles(card) {
     row.appendChild(input);
     card.appendChild(row);
   };
-  tog('showWaits', 'Show waits', 'Show which tiles finish a ready hand, and warn on furiten');
+  tog('showWaits', 'Show waits', 'Show which tiles finish a ready hand, mark discards that leave you ready, and warn on furiten');
   tog('autoWin', 'Auto-win', 'Declare ron and tsumo for you');
   tog('noCalls', 'No calls', 'Skip pon, chi and kan prompts');
   tog('redTint', 'Red five shading', 'Give red fives a red-tinted tile');
@@ -761,9 +780,36 @@ function settingToggles(card) {
     row.appendChild(s);
     card.appendChild(row);
   };
-  sel('tileStyle', 'Tile style', 'Classic faces; Classic with a number and suit label (5m, 3p, E) in the corner; or Clear: suit at top-left and a big number at bottom-right', [['classic', 'Classic'], ['labels', 'Classic + corner labels'], ['clear', 'Clear']]);
+  styleRow(card);
   sel('speed', 'Bot speed', 'How long the bots think', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]);
   sel('tapMode', 'Discarding', 'Tap once, or tap to lift then tap again', [['auto', 'Auto (mouse: once)'], ['one', 'One tap'], ['two', 'Two taps']]);
+}
+
+// Tile style picker: each choice shows a few tiles drawn in that style.
+function styleRow(card) {
+  const row = el('div', 'toggle style-row', '<span>Tile style</span>');
+  const opts = el('div', 'style-opts');
+  const choices = [['classic', 'Classic'], ['labels', 'Corner labels'], ['clear', 'Clear']];
+  for (const [v, name] of choices) {
+    const b = el('button', 'style-opt' + (settings.tileStyle === v ? ' on' : ''));
+    b.type = 'button';
+    const tiles = el('div', 'style-tiles');
+    for (const id of [5, 16, 61, 121]) {
+      const e = tileEl(id, { cls: v === 'labels' ? 'show-lbl' : 'no-lbl' });
+      e.firstChild.style.backgroundImage = faceUrl(typeOf(id), isRed(id), v === 'clear' ? 'clear' : 'classic');
+      e.removeAttribute('data-id');
+      tiles.appendChild(e);
+    }
+    b.appendChild(tiles);
+    b.appendChild(el('small', '', name));
+    b.onclick = () => {
+      settings.tileStyle = v; saveSettings(); applyLooks(); if (game) render();
+      for (const o of opts.children) o.classList.toggle('on', o === b);
+    };
+    opts.appendChild(b);
+  }
+  row.appendChild(opts);
+  card.appendChild(row);
 }
 
 function settingsSheet() {

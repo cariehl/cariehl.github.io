@@ -105,11 +105,11 @@ let style = 'classic';
 export function setTileStyle(s) { style = s === 'clear' ? 'clear' : 'classic'; }
 
 const cache = new Map();
-export function faceUrl(t, red = false) {
-  const key = `${style}${t * 2 + (red ? 1 : 0)}`;
+export function faceUrl(t, red = false, s = style) {
+  const key = `${s}${t * 2 + (red ? 1 : 0)}`;
   let u = cache.get(key);
   if (!u) {
-    u = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(style === 'clear' ? clearFace(t, red) : face(t, red))}")`;
+    u = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(s === 'clear' ? clearFace(t, red) : face(t, red))}")`;
     cache.set(key, u);
   }
   return u;
