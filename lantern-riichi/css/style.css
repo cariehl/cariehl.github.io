@@ -89,6 +89,9 @@ h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 600; letter-sp
 /* red fives: the face colour pulled toward red, plus a thin red rim, so they stand out on any tile face */
 :where(.red-tint) .tile.red { background: color-mix(in srgb, var(--tile) 82%, #e2433a); box-shadow: inset 0 0 0 calc(var(--w) * 0.045) rgba(196, 40, 30, 0.55), inset 0 calc(var(--w) * -0.07) 0 color-mix(in srgb, var(--tile-edge) 70%, #b8352c), 0 calc(var(--w) * 0.03) calc(var(--w) * 0.05) rgba(0, 0, 0, 0.45); }
 :where(.red-tint) .tile.red .lbl { background: color-mix(in srgb, var(--tile) 82%, #e2433a); }
+:where(.dora-tint) .tile.dora { background: color-mix(in srgb, var(--tile) 74%, #f2b705); box-shadow: inset 0 0 0 calc(var(--w) * 0.045) rgba(196, 140, 10, 0.7), inset 0 calc(var(--w) * -0.07) 0 color-mix(in srgb, var(--tile-edge) 70%, #c08a0a), 0 calc(var(--w) * 0.03) calc(var(--w) * 0.05) rgba(0, 0, 0, 0.45); }
+:where(.dora-tint) .tile.dora .lbl { background: color-mix(in srgb, var(--tile) 74%, #f2b705); }
+:where(.dora-tint.red-tint) .tile.dora.red { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--tile) 58%, #f2b705) 0 calc(var(--w) * 0.16), color-mix(in srgb, var(--tile) 66%, #e2433a) calc(var(--w) * 0.16) calc(var(--w) * 0.32)); }
 .tile.back { background: linear-gradient(160deg, var(--back), var(--back-2)); box-shadow: inset 0 calc(var(--w) * -0.07) 0 #e9dcc0, 0 calc(var(--w) * 0.03) calc(var(--w) * 0.05) rgba(0, 0, 0, 0.45); }
 .tile.back::after { content: ''; position: absolute; inset: 22% 26% 30%; border: calc(var(--w) * 0.05) solid rgba(255, 215, 150, 0.35); border-radius: 50%; }
 .tile .lbl { display: none; position: absolute; left: 3%; top: 1%; z-index: 1; font: 800 calc(var(--w) * 0.38)/1 system-ui, sans-serif; color: #1d2433; background: color-mix(in srgb, var(--tile) 85%, transparent); border-radius: calc(var(--w) * 0.06); padding: calc(var(--w) * 0.02) calc(var(--w) * 0.03); letter-spacing: -0.02em; }

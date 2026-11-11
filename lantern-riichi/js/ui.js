@@ -24,7 +24,7 @@ const signed = (n) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '0');
 const SETTINGS_KEY = 'lantern-riichi.settings.v1';
 const SAVE_KEY = 'lantern-riichi.save.v1';
 const settings = Object.assign(
-  { opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, speed: 'normal', tapMode: 'auto' },
+  { opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, doraTint: true, speed: 'normal', tapMode: 'auto' },
   readJSON(SETTINGS_KEY) || {},
 );
 function readJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } }
@@ -50,6 +50,7 @@ function applyLooks() {
   }
   document.body.classList.toggle('labels', settings.tileStyle === 'labels');
   document.body.classList.toggle('red-tint', !!settings.redTint);
+  document.body.classList.toggle('dora-tint', !!settings.doraTint);
   setTileStyle(settings.tileStyle);
 }
 function myAvatar() {
@@ -58,9 +59,14 @@ function myAvatar() {
 
 // ---------------------------------------------------------------- tiles
 
-function tileEl(id, { back = false, side = false, cls = '' } = {}) {
-  const red = !back && id !== null && id !== undefined && isRed(id);
-  const e = el('div', 'tile' + (back ? ' back' : '') + (side ? ' side' : '') + (red ? ' red' : '') + (cls ? ' ' + cls : ''));
+// Dora tile types of the hand on the table, for the gold shading.
+let doraTypes = new Set();
+
+function tileEl(id, { back = false, side = false, cls = '', dora = true } = {}) {
+  const face = !back && id !== null && id !== undefined;
+  const red = face && isRed(id);
+  const isDora = face && dora && doraTypes.has(typeOf(id));
+  const e = el('div', 'tile' + (back ? ' back' : '') + (side ? ' side' : '') + (red ? ' red' : '') + (isDora ? ' dora' : '') + (cls ? ' ' + cls : ''));
   if (!back && id !== null && id !== undefined) {
     const f = el('i');
     f.style.backgroundImage = faceUrl(typeOf(id), isRed(id));
@@ -421,7 +427,8 @@ function render(fresh = false) {
   $('#centerWall').textContent = `${H.wall.length} left`;
   const dr = $('#doraRow');
   dr.innerHTML = '';
-  for (let i = 0; i < 5; i++) dr.appendChild(i < H.doraShown ? tileEl(H.doraInd[i]) : tileEl(null, { back: true }));
+  doraTypes = new Set(H.doraInd.slice(0, H.doraShown).map((id) => doraOf(typeOf(id))));
+  for (let i = 0; i < 5; i++) dr.appendChild(i < H.doraShown ? tileEl(H.doraInd[i], { dora: false }) : tileEl(null, { back: true }));
 
   const turnSeat = currentTurnSeat();
   for (let s = 0; s < 4; s++) {
@@ -643,9 +650,9 @@ function handRow(hand, melds, winTile) {
   return row;
 }
 
-function tilesRow(ids) {
+function tilesRow(ids, opts) {
   const r = el('div', 'tiles');
-  for (const id of ids) r.appendChild(tileEl(id));
+  for (const id of ids) r.appendChild(tileEl(id, opts));
   return r;
 }
 
@@ -676,11 +683,11 @@ function winBlock(w, rec, names) {
   b.appendChild(handRow(w.hand, w.melds, w.tile));
   const dora = el('div', 'res-dora');
   const d1 = el('div', '', '<small>Dora indicators</small>');
-  d1.appendChild(tilesRow(rec.dora || []));
+  d1.appendChild(tilesRow(rec.dora || [], { dora: false }));
   dora.appendChild(d1);
   if (w.riichi && w.ura && w.ura.length) {
     const d2 = el('div', '', '<small>Ura indicators</small>');
-    d2.appendChild(tilesRow(w.ura));
+    d2.appendChild(tilesRow(w.ura, { dora: false }));
     dora.appendChild(d2);
   }
   b.appendChild(dora);
@@ -771,6 +778,7 @@ function settingToggles(card) {
   tog('autoWin', 'Auto-win', 'Declare ron and tsumo for you');
   tog('noCalls', 'No calls', 'Skip pon, chi and kan prompts');
   tog('redTint', 'Red five shading', 'Give red fives a red-tinted tile');
+  tog('doraTint', 'Dora shading', 'Give dora tiles a gold tint (gold and red stripes on a red five that is also dora)');
   const sel = (key, label, hint, options) => {
     const row = el('label', 'toggle', `<span>${label}<small>${hint}</small></span>`);
     const s = el('select');
@@ -1008,4 +1016,3 @@ function renderRules() {
 applyLooks();
 renderMenu();
 show('menu');
-void doraOf;
