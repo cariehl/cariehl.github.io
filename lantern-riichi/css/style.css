@@ -174,9 +174,13 @@ h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 600; letter-sp
 #actions .btn .tile { --w: 18px; }
 #actions .note { align-self: center; font-size: 13px; color: var(--muted); }
 #waits { position: absolute; left: 0; right: 0; bottom: calc(100% + var(--actions-h, 0px)); z-index: 4; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 4px; flex-wrap: wrap; }
-#waits .tile { --w: 18px; }
 #waits .w { display: flex; align-items: flex-end; gap: 2px; }
 #waits .n { font-size: 11px; }
+#waits .tile { --w: 22px; }
+#waits .tile .lbl { display: none; }
+#waits .w.noyaku { opacity: 0.45; text-decoration: line-through; }
+#waits .w.noyaku .tile::after { content: ''; position: absolute; left: -10%; right: -10%; top: 50%; height: 2px; background: var(--bad); transform: rotate(-35deg); }
+#hand .tile.ready.noyaku::before { background: var(--bad); box-shadow: 0 0 6px var(--bad); }
 #waits .furiten { color: var(--bad); font-weight: 600; }
 #waits { pointer-events: none; text-shadow: 0 1px 2px #000; }
 #dock.acting #waits { bottom: calc(100% + 50px); }

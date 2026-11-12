@@ -3,6 +3,7 @@
 import { typeOf, isRed, counts, WIND_KANJI, WIND_NAMES, doraOf, tileLongName, tileName } from './tiles.js';
 import { faceUrl, setTileStyle } from './tileart.js';
 import { waitsOf, shanten } from './shanten.js';
+import { scoreWin } from './score.js';
 import { Game, roundName, RULES } from './game.js';
 import { PERSONAS, personaById, botTurn, botReaction } from './bots.js';
 import { loadHistory, addGame, makeRecord, stats, deleteGame, clearHistory } from './history.js';
@@ -494,7 +495,8 @@ function renderHand() {
   if (ui.hover !== null && (!t || !allowed.has(ui.hover))) ui.hover = null;
   const add = (id, gap) => {
     const dim = t && !allowed.has(id);
-    const e = tileEl(id, { cls: (dim ? 'dim' : '') + (gap ? ' gap' : '') + (ui.selected === id ? ' sel' : '') + (!dim && ready?.has(typeOf(id)) ? ' ready' : '') + (ui.react && typeOf(id) === typeOf(ui.react.tile) ? ' hl' : '') });
+    const r = !dim && ready ? ready.get(typeOf(id)) : undefined;
+    const e = tileEl(id, { cls: (dim ? 'dim' : '') + (gap ? ' gap' : '') + (ui.selected === id ? ' sel' : '') + (r !== undefined ? ' ready' + (r ? ' noyaku' : '') : '') + (ui.react && typeOf(id) === typeOf(ui.react.tile) ? ' hl' : '') });
     e.onclick = () => onTileTap(id);
     // mouse: hovering previews the waits and matching table tiles, since one click discards
     e.onpointerenter = (ev) => { if (ev.pointerType === 'mouse') { ui.hover = id; updateMatches(); renderWaits(); } };
@@ -505,18 +507,39 @@ function renderHand() {
   if (drawn !== null) add(drawn, true);
 }
 
-// Tile types in a 14-tile hand whose discard leaves the hand ready (tenpai).
+// Tile types in a 14-tile hand whose discard leaves the hand ready (tenpai),
+// mapped to true when that ready hand could never win for lack of a yaku.
 function readyDiscards(p) {
-  const out = new Set();
+  const out = new Map();
   if (p.hand.length % 3 !== 2) return out;
   const c = counts(p.hand);
   for (let t = 0; t < 34; t++) {
     if (!c[t]) continue;
     c[t]--;
-    if (shanten(c, p.melds.length) === 0) out.add(t);
+    if (shanten(c, p.melds.length) === 0) {
+      const rest = p.hand.slice();
+      rest.splice(rest.findIndex((id) => typeOf(id) === t), 1);
+      const y = waitYaku(rest, p);
+      out.set(t, !y.closed && !y.riichi && y.waits.every((w) => !y.any.has(w)));
+    }
     c[t]++;
   }
   return out;
+}
+
+// For a ready 13-tile hand: which waits win with a yaku by ron, and by ron or tsumo.
+// Situational yaku (last tile, after a kan) are left out, since they can't be planned on.
+function waitYaku(hand, p) {
+  const waits = waitsOf(counts(hand), p.melds.length);
+  const closed = p.melds.every((m) => m.kind === 'ankan');
+  const ron = new Set(), any = new Set();
+  const flags = game.winFlags(0, {});
+  for (const w of waits) {
+    const tile = w * 4 + 3; // never a red five, so the yaku check ignores red dora
+    if (p.riichi || scoreWin({ hand: hand.concat(tile), winTile: tile, tsumo: false, ...flags })) { ron.add(w); any.add(w); }
+    else if (scoreWin({ hand: hand.concat(tile), winTile: tile, tsumo: true, ...flags })) any.add(w);
+  }
+  return { waits, closed, riichi: p.riichi, ron, any };
 }
 
 function onTileTap(id) {
@@ -606,15 +629,24 @@ function renderWaits() {
   const waits = waitsOf(c, p.melds.length);
   if (!waits.length) return;
   const rem = visibleRemaining(0, hand);
+  const y = waitYaku(hand, p);
   box.appendChild(el('span', '', label));
   for (const w of waits) {
-    const it = el('span', 'w');
+    const it = el('span', 'w' + (y.any.has(w) ? '' : ' noyaku'));
     it.appendChild(typeTile(w));
     it.appendChild(el('span', 'n', `×${rem[w]}`));
     box.appendChild(it);
   }
   const furiten = p.discards.some((d) => waits.includes(typeOf(d.id))) || (hand.length === p.hand.length && (p.furitenTemp || p.furitenRiichi));
   if (furiten) box.appendChild(el('span', 'furiten', 'Furiten: no ron'));
+  const noRon = waits.filter((w) => !y.ron.has(w)).length;
+  if (noRon && !y.riichi) {
+    let msg;
+    if (y.closed) msg = noRon === waits.length ? 'No yaku: riichi, or win by tsumo' : 'Some waits have no yaku for ron: riichi to be safe';
+    else if (waits.every((w) => !y.any.has(w))) msg = "No yaku: this hand can't win";
+    else msg = noRon === waits.length && y.any.size ? 'No yaku for ron: tsumo only' : 'No yaku on the crossed-out waits';
+    box.appendChild(el('span', 'furiten', msg));
+  }
   box.hidden = false;
 }
 
