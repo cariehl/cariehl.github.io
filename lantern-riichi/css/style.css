@@ -298,3 +298,15 @@ body.american .river { left: 31%; width: 38%; }
 body.american .river .tile { --w: 3.55cqw; }
 body.american .layer > .melds .tile { --w: 3.1cqw; }
 body.american .layer > .melds { gap: 0.6cqw; }
+/* your card over time */
+.card-progress .sub b { color: var(--ink); }
+.sec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 12px; margin: 0 0 12px; }
+.sec { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 12.5px; color: var(--muted); }
+.sec .ct { font-variant-numeric: tabular-nums; }
+.sec .bar { grid-column: 1 / -1; height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.sec .bar i { display: block; height: 100%; background: var(--accent); }
+.sec.full { color: var(--good); } .sec.full .bar i { background: var(--good); }
+.card-hand.made { background: linear-gradient(90deg, rgba(124, 196, 143, 0.08), transparent 70%); }
+.made-tag { color: var(--good); font-weight: 700; }
+.card-progress-row { padding: 10px 12px; }
+.card-note { color: var(--accent) !important; margin: 4px 0 0 !important; }

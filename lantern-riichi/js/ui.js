@@ -984,6 +984,10 @@ function renderHistory() {
   stat(pct(s.open, s.hands), am ? 'exposed' : 'opened hand');
   stat(s.wins ? fmt(Math.round(s.winPoints / s.wins)) : '-', 'average win');
   body.appendChild(grid);
+  if (am) {
+    body.appendChild(el('h2', '', 'Your card'));
+    body.appendChild(AM.cardProgressEl());
+  }
   const places = el('div', 'places');
   s.place.forEach((n) => { const sp = el('span'); sp.style.flex = n; places.appendChild(sp); });
   body.appendChild(el('small', '', `Places: ${s.place.map((n, i) => `${['1st', '2nd', '3rd', '4th'][i]} ${n}`).join(' · ')}`)).style.color = 'var(--muted)';

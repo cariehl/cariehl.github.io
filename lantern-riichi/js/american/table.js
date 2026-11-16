@@ -7,6 +7,8 @@ import { parseGroups, missing, exposuresFit, compileCard } from './hands.js';
 import { amBotTurn, amBotReaction, amBotPass, amBotVote, amBotCourtesy, closestTargets } from './bots.js';
 import { AM_RULES } from './game.js';
 import { cardById } from './card.js';
+import { loadRecord, saveRecord, noteHand, noteGame, backfill, summary } from './record.js';
+import { loadHistory } from '../history.js';
 
 const DIR_NAME = { 1: 'right', 2: 'across', 3: 'left' };
 const SET_NAME = { 3: 'Pung', 4: 'Kong', 5: 'Quint', 6: 'Sextet' };
@@ -79,6 +81,16 @@ export function createAmericanTable(d) {
   }
   const game = () => d.game();
 
+  // your card over time (record.js), filled from saved games the first time
+  let record = null;
+  function getRecord() {
+    if (!record) {
+      record = loadRecord();
+      if (backfill(record, loadHistory())) saveRecord(record);
+    }
+    return record;
+  }
+
   // ---------------------------------------------------------------- events
 
   async function onEvent(type, ev, g) {
@@ -128,9 +140,15 @@ export function createAmericanTable(d) {
       case 'handEnd':
         ui.reveal = true;
         render();
-        if (ev.kind === 'mahjong') await callout('Mahjong!', ev.wins[0].seat, 900);
-        else await sleep(600);
-        await handSheet(ev);
+        {
+          const r = getRecord();
+          const noted = noteHand(r, g.cardId, ev, undefined, `${g.seed}:${ev.handNo}`);
+          if (ev.last) noteGame(r, g.cardId);
+          saveRecord(r);
+          if (ev.kind === 'mahjong') await callout('Mahjong!', ev.wins[0].seat, 900);
+          else await sleep(600);
+          await handSheet(ev, noted);
+        }
         break;
     }
   }
@@ -388,6 +406,8 @@ export function createAmericanTable(d) {
     if (g && g.h && d.pauseFor) pause = d.pauseFor();
     return openSheet((box, done) => {
       box.appendChild(el('h2', '', card.name));
+      const sum = summary(getRecord(), cc);
+      box.appendChild(progressEl(sum));
       box.appendChild(el('p', 'sub', 'Colours mark suits, not particular ones: two groups in the same colour share a suit, different colours are different suits. 0 is the Soap (White dragon); D is the dragon of that group’s suit (Craks Red, Bams Green, Dots Soap). X: you may expose sets. C: concealed. Jokers fill sets of three or more, never pairs or singles.'));
       let c = null, ex = [];
       let best = new Map();
@@ -404,7 +424,9 @@ export function createAmericanTable(d) {
         const top = el('div', 'card-top');
         top.appendChild(handText(hand));
         const b = best.get(hand.index);
-        top.appendChild(el('span', 'card-val', `${b ? `<em class="${b.m <= 3 ? 'pos' : ''}">${b.m} away</em> · ` : g && g.h ? '<em class="neg">blocked</em> · ' : ''}${hand.concealed ? 'C' : 'X'} ${hand.value}`));
+        const mine = sum.hands[hand.text];
+        if (mine && mine.wins) row.classList.add('made');
+        top.appendChild(el('span', 'card-val', `${mine && mine.wins ? `<span class="made-tag" title="Made ${mine.wins}×, best ${mine.best}${mine.jokerless ? `, ${mine.jokerless} jokerless` : ''}">✓ ${mine.wins}×</span> ` : ''}` + `${b ? `<em class="${b.m <= 3 ? 'pos' : ''}">${b.m} away</em> · ` : g && g.h ? '<em class="neg">blocked</em> · ' : ''}${hand.concealed ? 'C' : 'X'} ${hand.value}`));
         row.appendChild(top);
         if (hand.note) row.appendChild(el('small', '', hand.note));
         const tg = b ? b.tg : cc.targets.find((x) => x.hand === hand);
@@ -417,6 +439,37 @@ export function createAmericanTable(d) {
     });
   }
 
+  // Made hands out of the whole card, with a bar per section.
+  function progressEl(sum) {
+    const box = el('div', 'card-progress');
+    box.appendChild(el('p', 'sub', sum.made
+      ? `You’ve made <b>${sum.made} of ${sum.total}</b> hands on this card (${sum.wins} win${sum.wins === 1 ? '' : 's'} in ${sum.played} hand${sum.played === 1 ? '' : 's'} played). Made hands are ticked.`
+      : `You haven’t made a hand on this card yet${sum.played ? ` (${sum.played} hands played)` : ''}. Hands you make get ticked here.`));
+    const grid = el('div', 'sec-grid');
+    for (const s of sum.sections) {
+      const it = el('div', 'sec' + (s.made === s.total ? ' full' : ''));
+      it.appendChild(el('span', 'nm', s.name));
+      it.appendChild(el('span', 'ct', `${s.made}/${s.total}`));
+      const bar = el('span', 'bar');
+      bar.appendChild(el('i')).style.width = `${(100 * s.made) / s.total}%`;
+      it.appendChild(bar);
+      grid.appendChild(it);
+    }
+    box.appendChild(grid);
+    return box;
+  }
+
+  // For the history page: your progress on the current card, with a button to open it.
+  function cardProgressEl() {
+    const card = cardById(settings.amCard);
+    const box = el('div', 'game-row card-progress-row');
+    box.appendChild(el('div', 'card-top', `<b>${card.name}</b>`));
+    box.appendChild(progressEl(summary(getRecord(), compileCard(card))));
+    const b = btn('Open your card', 'ghost small', () => cardSheet(card.id));
+    box.appendChild(b);
+    return box;
+  }
+
   // ---------------------------------------------------------------- result sheets
 
   function winHandRow(w, cls = 'res-hand') {
@@ -427,7 +480,7 @@ export function createAmericanTable(d) {
     return row;
   }
 
-  function handSheet(rec) {
+  function handSheet(rec, noted) {
     const seats = d.seats();
     const names = seats.map((s) => s.name);
     return openSheet((card, done) => {
@@ -440,6 +493,7 @@ export function createAmericanTable(d) {
         head.appendChild(el('span', 'card-val', `${w.section} · ${w.concealed ? 'C' : 'X'} ${w.base}`));
         card.appendChild(head);
         card.appendChild(winHandRow(w));
+        if (noted) card.appendChild(el('p', 'sub card-note', noted.firstTime ? `★ First time you’ve made this hand. It’s marked on your card.` : `You’ve made this hand ${noted.entry.wins} times.`));
         const ul = el('ul', 'yaku');
         ul.appendChild(el('li', '', `<span>Hand value</span><span>${w.base}</span>`));
         if (w.jokerless) ul.appendChild(el('li', '', '<span>Jokerless</span><span>×2</span>'));
@@ -502,5 +556,5 @@ export function createAmericanTable(d) {
     <table class="yaku-table">${personas.map((p) => `<tr><td>${p.emoji} <b>${p.name}</b> · ${p.style}<small>${p.amBlurb}</small></td><td></td></tr>`).join('')}</table>`;
   }
 
-  return { human, botAgent, onEvent, render, cardSheet, historyItem, winHandRow, rulesHtml, handText };
+  return { human, botAgent, onEvent, render, cardSheet, cardProgressEl, historyItem, winHandRow, rulesHtml, handText };
 }
