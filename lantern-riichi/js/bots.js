@@ -10,31 +10,37 @@ export const PERSONAS = [
   {
     id: 'mashi', name: 'Mashi', emoji: '🐒', color: '#d9822b', style: 'Frequent caller',
     blurb: 'Calls pon and chi at every chance to race to a quick, cheap win. Rarely folds.',
+    amBlurb: "Exposes pungs and kongs at every chance, jokers and all, racing to a cheap hand. Rarely plays safe.",
     p: { call: 1.0, defense: 0.35, value: 0.2, closed: false, riichi: 0.5, dama: 0.3 },
   },
   {
     id: 'fuku', name: 'Fuku', emoji: '🦉', color: '#7a6bb0', style: 'Defensive',
     blurb: 'Folds the moment someone declares riichi unless it already has a strong hand. Hard to deal into.',
+    amBlurb: "Reads everyone’s exposures and won’t throw the tiles they need. Exposes only when it gets close.",
     p: { call: 0.3, defense: 1.7, value: 0.4, closed: false, riichi: 0.6, dama: 0.6 },
   },
   {
     id: 'kame', name: 'Kame', emoji: '🐢', color: '#3f8f6b', style: 'Keeps the hand closed',
     blurb: 'Never calls. Builds a closed hand and declares riichi as soon as it is ready.',
+    amBlurb: "Never exposes. Plays concealed hands, singles and pairs included, and waits for the tile.",
     p: { call: 0, defense: 0.6, value: 0.4, closed: true, riichi: 1.0, dama: 0 },
   },
   {
     id: 'rin', name: 'Rin', emoji: '🦊', color: '#c4553a', style: 'Value hunter',
     blurb: 'Chases flushes, dragons and dora. Stays quiet (no riichi) when the hand is already big.',
+    amBlurb: "Chases the big hands and keeps jokers out of its exposures, hoping for the jokerless double.",
     p: { call: 0.5, defense: 0.6, value: 1.0, closed: false, riichi: 0.5, dama: 1.0 },
   },
   {
     id: 'bonta', name: 'Bonta', emoji: '🦝', color: '#8a6a4a', style: 'Gambler',
     blurb: 'Never folds. Declares riichi on anything, even a single bad wait.',
+    amBlurb: "Never plays safe. Calls on hope and lifts jokers off anyone’s exposures.",
     p: { call: 0.35, defense: 0, value: 0.3, closed: false, riichi: 1.0, dama: 0 },
   },
   {
     id: 'kuma', name: 'Kuma', emoji: '🐻', color: '#4a6fa5', style: 'Balanced',
     blurb: 'Plays by the book: efficient, calls when it pays, folds when it should.',
+    amBlurb: "Steers toward the likeliest hand, exposes when it pays, and holds back tiles that would feed a near hand.",
     p: { call: 0.6, defense: 0.8, value: 0.5, closed: false, riichi: 0.8, dama: 0.5 },
   },
 ];

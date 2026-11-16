@@ -273,3 +273,28 @@ h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 600; letter-sp
 .yaku-table td:nth-child(2) { white-space: nowrap; color: var(--accent); text-align: right; }
 .yaku-table small { color: var(--muted); display: block; }
 
+
+/* ---------------------------------------------------------------- American mahjong */
+.card-btn { padding: 4px 12px !important; }
+#waits.am-hint { gap: 4px 8px; }
+#waits .tg-row .tile { --w: min(18px, calc((100vw - 40px) / 17)); }
+.tg-row { flex-wrap: wrap; row-gap: 3px; }
+.tg-row .tile { margin-right: 1px; }
+.tg-row .tile.missing { opacity: 0.4; filter: grayscale(0.6); }
+.tg-gap { width: 6px; flex: none; }
+.card-hand { padding: 8px 0 10px; border-bottom: 1px solid var(--line); }
+.card-hand small { display: block; color: var(--muted); font-size: 12px; margin: 2px 0 6px; }
+.card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.card-text { font: 700 19px/1.2 ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: 0.04em; display: inline-flex; gap: 0.55em; flex-wrap: wrap; }
+.card-text .sa { color: #ff7a6b; } .card-text .sb { color: #74d38a; } .card-text .sc { color: #7fb4ff; } .card-text .sn { color: var(--ink); }
+.card-val { color: var(--accent); font-weight: 650; white-space: nowrap; font-size: 14px; }
+.card-val em { font-style: normal; color: var(--muted); }
+.card-val em.pos { color: var(--good); } .card-val em.neg { color: var(--bad); }
+.sheet-card .card-tiles .tile { --w: min(22px, calc((100vw - 90px) / 16)); }
+.seatinfo .wind.am { font-family: Georgia, serif; }
+.hist-mode { margin-bottom: 16px; }
+/* American hands throw many more tiles, and exposures run to five or six tiles: shrink both */
+body.american .river { left: 31%; width: 38%; }
+body.american .river .tile { --w: 3.55cqw; }
+body.american .layer > .melds .tile { --w: 3.1cqw; }
+body.american .layer > .melds { gap: 0.6cqw; }

@@ -51,9 +51,32 @@ function souOne() {
     `<path d="M28 42 l9 6 l-10 0z" fill="${BLUE}"/><path d="M17 41 q5 5 10 0" fill="none" stroke="#fbf7ee" stroke-width="1.4"/>`;
 }
 
+// American mahjong's extra tiles: a flower (type 34) and a joker (type 35).
+const PINK = '#c2416b';
+function flowerArt(cx, cy, r) {
+  let petals = '';
+  for (let k = 0; k < 5; k++) {
+    const a = (k * 72 - 90) * Math.PI / 180;
+    petals += `<ellipse cx="${(cx + Math.cos(a) * r * 0.55).toFixed(1)}" cy="${(cy + Math.sin(a) * r * 0.55).toFixed(1)}" rx="${(r * 0.42).toFixed(1)}" ry="${(r * 0.3).toFixed(1)}" transform="rotate(${k * 72} ${(cx + Math.cos(a) * r * 0.55).toFixed(1)} ${(cy + Math.sin(a) * r * 0.55).toFixed(1)})" fill="${PINK}"/>`;
+  }
+  return petals + `<circle cx="${cx}" cy="${cy}" r="${(r * 0.26).toFixed(1)}" fill="#e3a21a"/>`;
+}
+function flowerFace() {
+  return `<path d="M30 44 q-2 14 0 28" stroke="${GREEN}" stroke-width="3" fill="none"/>` +
+    `<path d="M30 60 q-12 -2 -16 -10 q10 0 16 8z" fill="${GREEN}"/><path d="M30 64 q11 -3 15 -11 q-10 1 -15 9z" fill="${GREEN}"/>` +
+    flowerArt(30, 28, 22);
+}
+function jokerFace() {
+  return `<path d="M30 8 l5.5 11.5 l12.5 1.5 l-9.2 8.6 l2.4 12.4 l-11.2 -6.1 l-11.2 6.1 l2.4 -12.4 l-9.2 -8.6 l12.5 -1.5z" fill="#e3a21a" stroke="${RED}" stroke-width="1.6"/>` +
+    `<text x="30" y="62" font-size="15" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="900" letter-spacing="-0.5" fill="${RED}">JOKER</text>` +
+    `<text x="30" y="75" font-size="9" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="700" fill="${BLUE}">★ ★ ★</text>`;
+}
+
 function face(t, red) {
   let body = '';
-  if (t < 9) {
+  if (t === 34) body = flowerFace();
+  else if (t === 35) body = jokerFace();
+  else if (t < 9) {
     const n = t + 1;
     body = `<text x="30" y="35" font-size="27" text-anchor="middle" font-family="${FONT}" font-weight="700" fill="${red ? RED : INK}">${NUMS[n - 1]}</text>` +
       `<text x="30" y="70" font-size="29" text-anchor="middle" font-family="${FONT}" font-weight="700" fill="${RED}">萬</text>`;
@@ -79,7 +102,13 @@ function face(t, red) {
 const NUM_FONT = `system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif`;
 function clearFace(t, red) {
   let suit = '', mark = '', markColor = INK, size = 41;
-  if (t < 27) {
+  if (t === 34) {
+    suit = flowerArt(20, 20, 17);
+    mark = 'F'; markColor = PINK;
+  } else if (t === 35) {
+    suit = `<path d="M20 3 l4.6 9.6 l10.4 1.3 l-7.7 7.2 l2 10.3 l-9.3 -5.1 l-9.3 5.1 l2 -10.3 l-7.7 -7.2 l10.4 -1.3z" fill="#e3a21a" stroke="${RED}" stroke-width="1.4"/>`;
+    mark = 'J'; markColor = RED;
+  } else if (t < 27) {
     const s = Math.floor(t / 9), n = (t % 9) + 1;
     mark = String(n);
     markColor = red ? RED : INK;

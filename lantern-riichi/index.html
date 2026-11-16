@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="description" content="Riichi mahjong against six bots with their own habits: a caller, a wall, a closed-hand purist, a value hunter, a gambler and a steady hand.">
+<meta name="description" content="Riichi or American mahjong against six bots with their own habits: a caller, a wall, a closed-hand purist, a value hunter, a gambler and a steady hand.">
 <meta name="theme-color" content="#14231f">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏮</text></svg>">
 <title>Lantern Riichi</title>
@@ -15,7 +15,7 @@
   <div class="menu-card">
     <div class="lanterns" aria-hidden="true"><span>🏮</span><span>🏮</span><span>🏮</span></div>
     <h1>Lantern Riichi</h1>
-    <p class="lede">Four-player riichi mahjong at a late-night table. Pick three opponents; each one plays its own way.</p>
+    <p class="lede" id="lede">Four-player riichi mahjong at a late-night table. Pick three opponents; each one plays its own way.</p>
 
     <div class="wallet">
       <span class="av" id="walletAv">🙂</span>
@@ -24,14 +24,20 @@
       <button class="btn ghost small" id="shopBtn">Shop</button>
     </div>
 
+    <h2>Game</h2>
+    <div class="seg" id="modeSeg">
+      <button data-v="riichi">Riichi <small>Japanese rules, 136 tiles</small></button>
+      <button data-v="american">American <small>2026 card, jokers, Charleston</small></button>
+    </div>
+
     <h2>Opponents <small id="pickCount">3 of 3</small></h2>
     <div id="personaGrid" class="persona-grid"></div>
     <div class="row-btns"><button class="btn ghost small" id="randomBtn">Random three</button></div>
 
     <h2>Length</h2>
     <div class="seg" id="lengthSeg">
-      <button data-v="east">East round <small>4+ hands</small></button>
-      <button data-v="south">Half game <small>East + South</small></button>
+      <button data-v="east"><span class="len-name">East round</span> <small class="len-sub">4+ hands</small></button>
+      <button data-v="south"><span class="len-name">Half game</span> <small class="len-sub">East + South</small></button>
     </div>
 
     <h2>Table</h2>
@@ -45,6 +51,7 @@
     <div class="row-btns">
       <button class="btn ghost" id="historyBtn">Game history</button>
       <button class="btn ghost" id="rulesBtn">Rules &amp; yaku</button>
+      <button class="btn ghost" id="cardBtn" hidden>The card</button>
       <button class="btn ghost" id="settingsBtn">Settings</button>
     </div>
   </div>
@@ -85,7 +92,7 @@
 </div>
 
 <div id="rules" class="screen" hidden>
-  <header class="page-bar"><button class="icon-btn" id="rulesBack" aria-label="Back">←</button><h1>Rules &amp; yaku</h1><span></span></header>
+  <header class="page-bar"><button class="icon-btn" id="rulesBack" aria-label="Back">←</button><h1 id="rulesTitle">Rules &amp; yaku</h1><span></span></header>
   <div id="rulesBody" class="page-body"></div>
 </div>
 

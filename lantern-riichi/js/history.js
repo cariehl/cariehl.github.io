@@ -36,6 +36,9 @@ export function clearHistory() {
   try { localStorage.removeItem(KEY); } catch { /* ignore */ }
 }
 
+// Riichi records predate the mode field.
+export const modeOf = (g) => (g.mode === 'american' ? 'american' : 'riichi');
+
 // Build the stored record from a finished game. seats[0] is the human.
 export function makeRecord(game, seats) {
   const r = game.result;
@@ -43,6 +46,7 @@ export function makeRecord(game, seats) {
     id: `${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`,
     date: new Date().toISOString(),
     length: game.length,
+    ...(game.mode === 'american' ? { mode: 'american', cardId: game.cardId } : {}),
     seats,
     firstDealer: r.firstDealer,
     final: r.final,
@@ -66,7 +70,9 @@ export function stats(list) {
         if (w.seat === 0) {
           s.wins++;
           s.winPoints += w.points;
-          if (!s.best || w.han > s.best.han || (w.yakuman && !s.best.yakuman)) s.best = { ...w, date: g.date };
+          if (w.jokerless) s.jokerless = (s.jokerless || 0) + 1;
+          const better = g.mode === 'american' ? !s.best || w.points > s.best.points : !s.best || w.han > s.best.han || (w.yakuman && !s.best.yakuman);
+          if (better) s.best = { ...w, date: g.date };
         }
         if (w.from === 0) s.dealIns++;
       }

@@ -6,8 +6,11 @@ import { waitsOf, shanten } from './shanten.js';
 import { scoreWin } from './score.js';
 import { Game, roundName, RULES } from './game.js';
 import { PERSONAS, personaById, botTurn, botReaction } from './bots.js';
-import { loadHistory, addGame, makeRecord, stats, deleteGame, clearHistory } from './history.js';
+import { loadHistory, addGame, makeRecord, stats, deleteGame, clearHistory, modeOf } from './history.js';
 import * as W from './wallet.js';
+import { amType, amTileName, amTileLongName } from './american/tiles.js';
+import { AmericanGame } from './american/game.js';
+import { createAmericanTable } from './american/table.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, html) => {
@@ -25,7 +28,7 @@ const signed = (n) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '0');
 const SETTINGS_KEY = 'lantern-riichi.settings.v1';
 const SAVE_KEY = 'lantern-riichi.save.v1';
 const settings = Object.assign(
-  { opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, doraTint: true, speed: 'normal', tapMode: 'auto' },
+  { mode: 'riichi', amCard: 'lantern-2026', opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, doraTint: true, speed: 'normal', tapMode: 'auto' },
   readJSON(SETTINGS_KEY) || {},
 );
 function readJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } }
@@ -63,19 +66,22 @@ function myAvatar() {
 // Dora tile types of the hand on the table, for the gold shading.
 let doraTypes = new Set();
 
-function tileEl(id, { back = false, side = false, cls = '', dora = true } = {}) {
+// Ids 136+ are American flowers and jokers; `am` also turns off red fives and dora shading.
+const tType = (id) => (id >= 136 ? amType(id) : typeOf(id));
+function tileEl(id, { back = false, side = false, cls = '', dora = true, am = false } = {}) {
   const face = !back && id !== null && id !== undefined;
-  const red = face && isRed(id);
-  const isDora = face && dora && doraTypes.has(typeOf(id));
+  const red = face && !am && isRed(id);
+  const isDora = face && !am && dora && doraTypes.has(typeOf(id));
   const e = el('div', 'tile' + (back ? ' back' : '') + (side ? ' side' : '') + (red ? ' red' : '') + (isDora ? ' dora' : '') + (cls ? ' ' + cls : ''));
-  if (!back && id !== null && id !== undefined) {
+  if (face) {
+    const t = tType(id);
     const f = el('i');
-    f.style.backgroundImage = faceUrl(typeOf(id), isRed(id));
+    f.style.backgroundImage = faceUrl(t, red);
     e.appendChild(f);
     e.dataset.id = id;
-    e.title = tileLongName(typeOf(id)) + (isRed(id) ? ' (red)' : '');
-    const t = typeOf(id);
-    const lbl = el('b', 'lbl s' + (t < 27 ? Math.floor(t / 9) : 3), t < 27 ? `${t % 9 + 1}<i class="sfx">${'mps'[Math.floor(t / 9)]}</i>` : tileName(t));
+    e.title = am ? amTileLongName(t) : tileLongName(t) + (red ? ' (red)' : '');
+    const sfx = am ? 'cdb' : 'mps';
+    const lbl = el('b', 'lbl s' + (t < 27 ? Math.floor(t / 9) : 3), t < 27 ? `${t % 9 + 1}<i class="sfx">${sfx[Math.floor(t / 9)]}</i>` : am ? amTileName(t) : tileName(t));
     e.appendChild(lbl);
   }
   return e;
@@ -124,12 +130,23 @@ function show(id) {
 
 // ---------------------------------------------------------------- menu
 
+const isAm = () => settings.mode === 'american';
+
 function renderMenu() {
+  const am = isAm();
+  for (const b of document.querySelectorAll('#modeSeg button')) b.classList.toggle('on', b.dataset.v === settings.mode);
+  $('#lede').textContent = am
+    ? 'American mahjong against the 2026 card: Charleston, jokers and exposures. Pick three opponents; each one plays its own way.'
+    : 'Four-player riichi mahjong at a late-night table. Pick three opponents; each one plays its own way.';
+  const lens = am ? [['Short game', '4 hands'], ['Long game', '8 hands']] : [['East round', '4+ hands'], ['Half game', 'East + South']];
+  document.querySelectorAll('#lengthSeg button').forEach((b, i) => { $('.len-name', b).textContent = lens[i][0]; $('.len-sub', b).textContent = lens[i][1]; });
+  $('#rulesBtn').textContent = am ? 'Rules' : 'Rules & yaku';
+  $('#cardBtn').hidden = !am;
   const grid = $('#personaGrid');
   grid.innerHTML = '';
   for (const p of PERSONAS) {
     const b = el('button', 'persona' + (settings.opponents.includes(p.id) ? ' on' : ''));
-    b.innerHTML = `<span class="av" style="--c:${p.color}">${p.emoji}</span><b>${p.name}</b><span class="style">${p.style}</span><p>${p.blurb}</p>`;
+    b.innerHTML = `<span class="av" style="--c:${p.color}">${p.emoji}</span><b>${p.name}</b><span class="style">${p.style}</span><p>${am ? p.amBlurb : p.blurb}</p>`;
     b.onclick = () => {
       const o = settings.opponents;
       if (o.includes(p.id)) settings.opponents = o.filter((x) => x !== p.id);
@@ -173,6 +190,8 @@ $('#randomBtn').onclick = () => {
   saveSettings();
   renderMenu();
 };
+for (const b of document.querySelectorAll('#modeSeg button')) b.onclick = () => { settings.mode = b.dataset.v; saveSettings(); renderMenu(); };
+$('#cardBtn').onclick = () => AM.cardSheet();
 for (const b of document.querySelectorAll('#lengthSeg button')) b.onclick = () => { settings.length = b.dataset.v; saveSettings(); renderMenu(); };
 $('#startBtn').onclick = () => { if (settings.opponents.length === 3) startGame(null); };
 $('#continueBtn').onclick = () => { const s = readJSON(SAVE_KEY); if (s) startGame(s); };
@@ -314,6 +333,27 @@ function botAgent(persona) {
   };
 }
 
+// The American table (js/american/table.js), given what it needs from this page.
+const AM = createAmericanTable({
+  $, el, btn, sleep, fmt, signed, tileEl, openSheet, callout, settings, ui,
+  game: () => game,
+  seats: () => seats,
+  speed: () => SPEED[settings.speed] || 520,
+  waitUnpaused: () => waitUnpaused(),
+  oneTap: () => settings.tapMode === 'one' || (settings.tapMode === 'auto' && pointerKind === 'mouse'),
+  render: () => render(),
+  updateMatches: () => updateMatches(),
+  deltasEl: (dl, sc) => deltasEl(dl, sc),
+  helperPersona: () => personaById('kuma'),
+  // hold the bots while a sheet (the card) is open over the table; returns the release
+  pauseFor: () => {
+    if (pauseGate) return null;
+    let release;
+    pauseGate = { promise: new Promise((r) => { release = r; }) };
+    return () => { pauseGate = null; release(); };
+  },
+});
+
 // ---------------------------------------------------------------- game flow
 
 async function startGame(save) {
@@ -328,11 +368,21 @@ async function startGame(save) {
   seats = [{ name: 'You', emoji: av.emoji, color: av.color, persona: null, style: 'You' }].concat(
     personas.map((p) => ({ name: p.name, emoji: p.emoji, color: p.color, persona: p.id, style: p.style })),
   );
-  const agents = [human, ...personas.map(botAgent)];
-  game = new Game({ agents, length: save ? save.state.length : settings.length, seed: (Math.random() * 2 ** 31) | 0, hooks: { event: onEvent }, resume: save ? save.state : null });
+  const american = save ? save.state.mode === 'american' : isAm();
+  const length = save ? save.state.length : settings.length;
+  const seed = (Math.random() * 2 ** 31) | 0;
+  const resume = save ? save.state : null;
+  if (american) {
+    const agents = [AM.human, ...personas.map(AM.botAgent)];
+    game = new AmericanGame({ agents, length, seed, hooks: { event: onEvent }, resume, cardId: settings.amCard });
+  } else {
+    const agents = [human, ...personas.map(botAgent)];
+    game = new Game({ agents, length, seed, hooks: { event: onEvent }, resume });
+  }
   game.opponents = opp;
   game.stake = stake;
-  Object.assign(ui, { turn: null, react: null, selected: null, riichiMode: false, reveal: false });
+  Object.assign(ui, { turn: null, react: null, selected: null, riichiMode: false, reveal: false, pass: null, vote: null, courtesy: null, swapPick: false, fresh: null });
+  document.body.classList.toggle('american', american);
   show('game');
   const g = game;
   try {
@@ -350,6 +400,13 @@ async function onEvent(type, d, g) {
   if (g !== game) throw new Quit(); // the player left this game
   await waitUnpaused();
   if (g !== game) throw new Quit();
+  if (g.mode === 'american') {
+    if (type === 'handStart') writeJSON(SAVE_KEY, { state: g.handStartSnapshot, opponents: g.opponents, stake: g.stake.id });
+    if (type === 'gameEnd') await finishGame(d, g);
+    else await AM.onEvent(type, d, g);
+    if (g !== game) throw new Quit();
+    return;
+  }
   switch (type) {
     case 'handStart':
       ui.reveal = false;
@@ -389,19 +446,21 @@ async function onEvent(type, d, g) {
       await handSheet(d, g);
       break;
     case 'gameEnd':
-      try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
-      {
-        const me = d.final.find((f) => f.seat === 0);
-        const money = W.settleGame(wallet, g.stake, me.points);
-        saveWallet();
-        const rec = makeRecord(g, seats);
-        rec.money = money;
-        addGame(rec);
-        await endSheet(d, g, money);
-      }
+      await finishGame(d, g);
       break;
   }
   if (g !== game) throw new Quit();
+}
+
+async function finishGame(d, g) {
+  try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
+  const me = d.final.find((f) => f.seat === 0);
+  const money = W.settleGame(wallet, g.stake, me.points);
+  saveWallet();
+  const rec = makeRecord(g, seats);
+  rec.money = money;
+  addGame(rec);
+  await endSheet(d, g, money);
 }
 
 async function callout(text, seat, ms) {
@@ -420,7 +479,9 @@ async function callout(text, seat, ms) {
 
 function render(fresh = false) {
   if (!game || !game.h) return;
+  if (game.mode === 'american') return AM.render(fresh);
   const g = game, H = g.h;
+  $('.bar-dora small').textContent = 'Dora';
   $('#roundName').textContent = roundName(g.round);
   $('#roundSub').textContent = `${g.honba} honba · ${g.sticks} riichi`;
   $('#wallLeft').textContent = H.wall.length;
@@ -467,8 +528,8 @@ function render(fresh = false) {
 // Highlight tiles on the table (discards and open melds) that match the tile picked in hand.
 function updateMatches() {
   const pick = ui.selected ?? ui.hover;
-  const t = pick === null || pick === undefined ? -1 : typeOf(pick);
-  for (const e of document.querySelectorAll('#table .tile[data-id]')) e.classList.toggle('match', typeOf(+e.dataset.id) === t);
+  const t = pick === null || pick === undefined ? -1 : tType(pick);
+  for (const e of document.querySelectorAll('#table .tile[data-id]')) e.classList.toggle('match', tType(+e.dataset.id) === t);
 }
 
 function currentTurnSeat() {
@@ -758,8 +819,8 @@ function endSheet(res, g, money) {
   return openSheet((card, done) => {
     const me = res.final.find((f) => f.seat === 0);
     card.appendChild(el('h2', '', ['First place!', 'Second place', 'Third place', 'Fourth place'][me.place - 1]));
-    card.appendChild(el('p', 'sub', `${g.length === 'east' ? 'East round' : 'Half game'} · ${res.log.length} hands · saved to your history`));
-    card.appendChild(standingsTable(res.final, seats));
+    card.appendChild(el('p', 'sub', `${lengthName(g.mode, g.length)} · ${res.log.length} hands · saved to your history`));
+    card.appendChild(standingsTable(res.final, seats, g.mode === 'american'));
     if (money && money.buyIn) {
       const m = el('div', 'money');
       m.innerHTML = `<div><small>Buy-in</small><b>${fmt(money.buyIn)}</b></div><div><small>Payout</small><b>${fmt(money.payout)}</b></div><div><small>Profit</small><b class="${money.profit > 0 ? 'pos' : money.profit < 0 ? 'neg' : ''}">${signed(money.profit)}</b></div><div><small>Wallet</small><b>${fmt(wallet.coins)}</b></div>`;
@@ -776,6 +837,7 @@ function endSheet(res, g, money) {
       // same opponents, length and table, if the wallet covers the buy-in
       settings.opponents = g.opponents.slice();
       settings.length = g.length;
+      settings.mode = g.mode === 'american' ? 'american' : 'riichi';
       settings.stake = g.stake.id;
       saveSettings();
       if (W.canAfford(wallet, g.stake)) startGame(null);
@@ -785,12 +847,17 @@ function endSheet(res, g, money) {
   });
 }
 
-function standingsTable(final, seatList) {
+function lengthName(mode, length) {
+  if (mode === 'american') return `American · ${length === 'east' ? 'short' : 'long'} game`;
+  return length === 'east' ? 'East round' : 'Half game';
+}
+
+function standingsTable(final, seatList, am = false) {
   const t = el('table', 'standings');
   for (const f of final.slice().sort((a, b) => a.place - b.place)) {
     const st = seatList[f.seat] || { name: '?', emoji: '?', color: '#555' };
     const tr = el('tr', f.seat === 0 ? 'me' : '');
-    tr.innerHTML = `<td class="place">${f.place}</td><td><span class="av" style="--c:${st.color};width:28px;height:28px;font-size:16px;display:inline-grid;vertical-align:middle;margin-right:8px">${st.emoji}</span>${st.name}</td><td class="num">${fmt(f.score)}</td><td class="num ${f.points >= 0 ? 'pos' : 'neg'}">${f.points > 0 ? '+' : ''}${f.points.toFixed(1)}</td>`;
+    tr.innerHTML = `<td class="place">${f.place}</td><td><span class="av" style="--c:${st.color};width:28px;height:28px;font-size:16px;display:inline-grid;vertical-align:middle;margin-right:8px">${st.emoji}</span>${st.name}</td><td class="num">${am ? signed(f.score) : fmt(f.score)}</td><td class="num ${f.points >= 0 ? 'pos' : 'neg'}">${f.points > 0 ? '+' : ''}${f.points.toFixed(1)}</td>`;
     t.appendChild(tr);
   }
   return t;
@@ -871,7 +938,7 @@ $('#pauseBtn').onclick = () => {
   openSheet((card, done0) => {
     const done = () => { done0(); unpause(); };
     card.appendChild(el('h2', '', 'Paused'));
-    card.appendChild(el('p', 'sub', `${roundName(game.round)} · leaving keeps the game (and its buy-in); it restarts from the beginning of this hand.`));
+    card.appendChild(el('p', 'sub', `${game.mode === 'american' ? game.handName() : roundName(game.round)} · leaving keeps the game (and its buy-in); it restarts from the beginning of this hand.`));
     settingToggles(card);
     const btns = el('div', 'sheet-btns');
     btns.appendChild(btn('Leave table', 'danger', () => { done(); game = null; renderMenu(); show('menu'); }));
@@ -885,9 +952,19 @@ $('#pauseBtn').onclick = () => {
 function renderHistory() {
   const body = $('#historyBody');
   body.innerHTML = '';
-  const list = loadHistory();
+  const all = loadHistory();
+  const am = isAm();
+  const seg = el('div', 'seg hist-mode');
+  for (const [v, label] of [['riichi', 'Riichi'], ['american', 'American']]) {
+    const n = all.filter((g) => modeOf(g) === v).length;
+    const b = el('button', settings.mode === v ? 'on' : '', `${label}<small>${n} game${n === 1 ? '' : 's'}</small>`);
+    b.onclick = () => { settings.mode = v; saveSettings(); renderHistory(); };
+    seg.appendChild(b);
+  }
+  body.appendChild(seg);
+  const list = all.filter((g) => modeOf(g) === settings.mode);
   if (!list.length) {
-    body.appendChild(el('p', 'empty', 'No finished games yet. They show up here when a game ends.'));
+    body.appendChild(el('p', 'empty', `No finished ${am ? 'American' : 'riichi'} games yet. They show up here when a game ends.`));
     return;
   }
   const s = stats(list);
@@ -898,19 +975,28 @@ function renderHistory() {
   stat(s.games, 'games');
   stat(avg, 'average place');
   stat(pct(s.place[0], s.games), 'first place');
-  stat(`${s.points >= 0 ? '+' : ''}${s.points.toFixed(1)}`, 'total points (uma)');
+  stat(`${s.points >= 0 ? '+' : ''}${s.points.toFixed(1)}`, am ? 'total points' : 'total points (uma)');
   stat(signed(s.coins), 'coins won');
   stat(pct(s.wins, s.hands), 'hands won');
-  stat(pct(s.dealIns, s.hands), 'dealt in');
-  stat(pct(s.riichi, s.hands), 'riichi');
-  stat(pct(s.open, s.hands), 'opened hand');
+  stat(pct(s.dealIns, s.hands), am ? 'threw the winning tile' : 'dealt in');
+  if (am) stat(s.wins ? pct(s.jokerless || 0, s.wins) : '-', 'wins jokerless');
+  else stat(pct(s.riichi, s.hands), 'riichi');
+  stat(pct(s.open, s.hands), am ? 'exposed' : 'opened hand');
   stat(s.wins ? fmt(Math.round(s.winPoints / s.wins)) : '-', 'average win');
   body.appendChild(grid);
   const places = el('div', 'places');
   s.place.forEach((n) => { const sp = el('span'); sp.style.flex = n; places.appendChild(sp); });
   body.appendChild(el('small', '', `Places: ${s.place.map((n, i) => `${['1st', '2nd', '3rd', '4th'][i]} ${n}`).join(' · ')}`)).style.color = 'var(--muted)';
   body.appendChild(places);
-  if (s.best) {
+  if (s.best && am) {
+    body.appendChild(el('h2', '', 'Best hand'));
+    const b = el('div', 'game-row');
+    b.style.padding = '10px 12px';
+    b.appendChild(el('div', '', `<b>${s.best.section}</b> · ${fmt(s.best.points)}${s.best.jokerless ? ' · jokerless' : ''} <span class="meta">· ${new Date(s.best.date).toLocaleDateString()}</span>`));
+    b.appendChild(el('div', 'meta', s.best.handText));
+    b.appendChild(AM.winHandRow(s.best));
+    body.appendChild(b);
+  } else if (s.best) {
     body.appendChild(el('h2', '', 'Best hand'));
     const b = el('div', 'game-row');
     b.style.padding = '10px 12px';
@@ -945,7 +1031,7 @@ function gameRow(g) {
   const me = g.final.find((f) => f.seat === 0);
   const head = el('button');
   const opp = g.seats.slice(1).map((st) => `<span class="av" style="--c:${st.color}" title="${st.name}">${st.emoji}</span>`).join('');
-  head.innerHTML = `<span class="place">${me.place}</span><span><b>${g.length === 'east' ? 'East round' : 'Half game'}</b> <span class="meta">${new Date(g.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span><span class="opp">${opp}</span></span><span class="pts"><b>${fmt(me.score)}</b><br><span class="${me.points >= 0 ? 'pos' : 'neg'}">${me.points > 0 ? '+' : ''}${me.points.toFixed(1)}</span>${g.money && g.money.buyIn ? `<br><span class="meta ${g.money.profit >= 0 ? 'pos' : 'neg'}">🪙 ${signed(g.money.profit)}</span>` : ''}</span>`;
+  head.innerHTML = `<span class="place">${me.place}</span><span><b>${lengthName(g.mode, g.length)}</b> <span class="meta">${new Date(g.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span><span class="opp">${opp}</span></span><span class="pts"><b>${fmt(me.score)}</b><br><span class="${me.points >= 0 ? 'pos' : 'neg'}">${me.points > 0 ? '+' : ''}${me.points.toFixed(1)}</span>${g.money && g.money.buyIn ? `<br><span class="meta ${g.money.profit >= 0 ? 'pos' : 'neg'}">🪙 ${signed(g.money.profit)}</span>` : ''}</span>`;
   const detail = el('div', 'game-detail');
   detail.hidden = true;
   head.onclick = () => {
@@ -958,10 +1044,11 @@ function gameRow(g) {
 }
 
 function buildDetail(box, g) {
-  box.appendChild(standingsTable(g.final, g.seats));
+  box.appendChild(standingsTable(g.final, g.seats, g.mode === 'american'));
   const names = g.seats.map((s) => s.name);
   const ul = el('ul', 'hand-log');
   for (const h of g.hands || []) {
+    if (g.mode === 'american') { ul.appendChild(AM.historyItem(h, names)); continue; }
     const li = el('li');
     let title = '', right = '';
     if (h.kind === 'ron' || h.kind === 'tsumo') {
@@ -1018,6 +1105,14 @@ const YAKU_LIST = [
 function renderRules() {
   const body = $('#rulesBody');
   body.classList.add('rules-body');
+  $('#rulesTitle').textContent = isAm() ? 'American rules' : 'Rules & yaku';
+  if (isAm()) {
+    body.innerHTML = AM.rulesHtml(PERSONAS);
+    const b = btn('See the card', 'ghost', () => AM.cardSheet());
+    b.style.marginTop = '16px';
+    body.insertBefore(b, body.children[4]);
+    return;
+  }
   body.innerHTML = `
   <h2>The table</h2>
   <p>Four players, 136 tiles with three red fives. Everyone starts on ${fmt(RULES.startPoints)}. A <b>half game</b> plays the East and South rounds; an <b>East round</b> game plays East only. If nobody has ${fmt(RULES.returnPoints)} when the last round ends, play continues into the next wind until someone does. The game also ends when anyone drops below zero, and the dealer stops the game in the final hand by winning or being ready while in first place.</p>
