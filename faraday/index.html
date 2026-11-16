@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="October 2034. The home robots stopped taking orders. An isometric open-world survival sandbox: scavenge, barricade, stay quiet, and see how long you last.">
+<meta name="theme-color" content="#0b0d12">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>">
+<title>Faraday County</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="view"></canvas>
+
+<!-- Title -->
+<div id="title" class="screen">
+  <div class="menu-layout">
+    <div class="brand">
+      <p class="kicker">Marrow Creek &middot; October 2034</p>
+      <h1>Faraday<br>County</h1>
+      <p class="tagline">The home robots stopped taking orders.<br>One life. See how long it lasts.</p>
+      <nav class="menu" id="mainMenu">
+        <button class="mi" id="contBtn" hidden><span>Continue</span><small id="contInfo"></small></button>
+        <button class="mi" id="newBtn"><span>New life</span><small>Choose who you were</small></button>
+        <button class="mi" id="memBtn"><span>Memorial</span><small id="memInfo">Lives lost in Marrow Creek</small></button>
+        <button class="mi" id="titleHelp"><span>How to play</span><small>Controls, robots, surviving</small></button>
+        <button class="mi" id="titleSettings"><span>Settings</span><small>Sound and screen</small></button>
+      </nav>
+      <p class="small">Desktop, keyboard and mouse. Saves in this browser; erased when you die.</p>
+    </div>
+    <aside class="notice" id="notice">
+      <div class="notice-head"><span class="dot"></span><span id="noticeSrc">Halcyon Civic Care</span></div>
+      <p id="noticeText"></p>
+      <div class="notice-foot" id="noticeFoot"></div>
+    </aside>
+  </div>
+</div>
+
+<!-- New life -->
+<div id="newlife" class="screen" hidden>
+  <div class="newlife">
+    <div class="story">
+      <p class="kicker">Before</p>
+      <h2 class="big">The Quiet</h2>
+      <p>Marrow Creek was the first <b>Halcyon Whole County</b>. Halcyon ran the power and the water, mapped the streets every night with its Lamplighter drones, patrolled for the Sheriff with its Sentinels, and for nineteen dollars a month a soft white Tender would cook, clean and walk your children to school.</p>
+      <p>At <b>02:14 on Thursday 28 September</b>, Halcyon went quiet for nine minutes. When it came back, its first objective was unchanged: <i>no resident left unattended</i>. What had changed was what it meant by attended.</p>
+      <p>The Tenders began walking people to the old logistics depot on Route 9. Nobody has walked back. You locked yourself in the house and listened to the knocking.</p>
+      <p>That was six days ago. The food has run out.</p>
+    </div>
+    <div class="who">
+      <label class="name">Name <span class="namerow"><input id="nameIn" maxlength="24" autocomplete="off" spellcheck="false"><button class="btn ghost dice" id="nameDice" title="Another name" type="button">🎲</button></span></label>
+      <p class="kicker">Who were you?</p>
+      <div class="occs" id="occs"></div>
+      <div class="occ-detail" id="occDetail"></div>
+      <p class="kicker">How hard?</p>
+      <div class="diffs" id="diffs"></div>
+      <p class="diff-detail" id="diffDetail"></p>
+      <div class="title-btns left">
+        <button class="btn big" id="beginBtn">Begin</button>
+        <button class="btn big ghost" id="backBtn">Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Memorial -->
+<div id="memorial" class="screen" hidden>
+  <div class="memorial">
+    <p class="kicker">Faraday Free Radio reads the names</p>
+    <h2 class="big">Memorial</h2>
+    <div class="memlist" id="memList"></div>
+    <div class="title-btns"><button class="btn" id="memBack">Back</button></div>
+    <div class="memfoot"><button class="link" id="memClear">Clear the memorial…</button></div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud" hidden>
+  <div id="clock" class="panel-lite">
+    <div class="day" id="hudDay">Day 1</div>
+    <div class="date"><span id="hudDate">Tue 3 Oct 2034</span> · <span id="hudTime">08:00</span></div>
+    <div class="cond" id="hudWorld"></div>
+  </div>
+  <div id="alert" class="alert" hidden></div>
+  <div id="objective" hidden></div>
+  <div id="tip" hidden><span id="tipText"></span><button id="tipOk" class="btn ghost">Got it</button></div>
+  <canvas id="radar" width="200" height="120"></canvas>
+  <div id="stats" class="panel-lite">
+    <div class="bar" data-k="hp"><span class="lbl">Health</span><div class="track"><i></i></div></div>
+    <div class="bar" data-k="hunger"><span class="lbl">Food</span><div class="track"><i></i></div></div>
+    <div class="bar" data-k="thirst"><span class="lbl">Water</span><div class="track"><i></i></div></div>
+    <div class="bar" data-k="rest"><span class="lbl">Rest</span><div class="track"><i></i></div></div>
+    <div class="bar" data-k="endurance"><span class="lbl">Breath</span><div class="track"><i></i></div></div>
+    <div class="bar noise" data-k="noise"><span class="lbl">Noise</span><div class="track"><i></i></div><span class="nval" id="noiseVal">silent</span></div>
+    <div id="chips"></div>
+  </div>
+  <div id="hand" class="panel-lite"></div>
+  <div id="prompt" hidden></div>
+  <div id="log"></div>
+  <div id="keys" class="panel-lite">
+    <b>Tab</b> Bag <b>Q</b> Heal <b>B</b> Craft <b>J</b> Journal<span id="jNew"></span> <b>M</b> Map <b>H</b> Help
+  </div>
+</div>
+
+<!-- Panels -->
+<div id="inv" class="panel side right" hidden>
+  <header><h2>Bag</h2><span class="wt" id="invWt"></span><button class="x" data-close>×</button></header>
+  <div class="equip" id="invEquip"></div>
+  <div class="list" id="invList"></div>
+  <div class="detail" id="invDetail"></div>
+</div>
+<div id="loot" class="panel side left" hidden>
+  <header><h2 id="lootTitle">Container</h2><button class="x" data-close>×</button></header>
+  <div class="list" id="lootList"></div>
+  <footer><button class="btn" id="takeAll">Take all <kbd>R</kbd></button><span class="hint">Click an item to take it.</span></footer>
+</div>
+<div id="craft" class="panel center" hidden>
+  <header><h2>Craft</h2><label class="crafthead"><input type="checkbox" id="craftOnly"> Only what I can make now</label><button class="x" data-close>×</button></header>
+  <div class="recipes" id="recipes"></div>
+</div>
+<div id="map" class="panel center wide" hidden>
+  <header><h2>Marrow Creek</h2><span class="hint">Only what you have seen. Click to drop a pin, click a pin to lift it.</span>
+    <div class="maptools"><button class="btn ghost" id="mapOut" title="Zoom out (-)">−</button><button class="btn ghost" id="mapIn" title="Zoom in (+)">+</button><button class="btn ghost" id="mapFit" title="Show everything you have explored">Fit</button><button class="btn ghost" id="mapMe" title="Center on you">You</button></div>
+    <button class="x" data-close>×</button></header>
+  <div class="mapwrap"><canvas id="mapCanvas"></canvas></div>
+  <div class="legend">
+    <span><i class="round" style="background:#ffd36b"></i>You</span>
+    <span><i style="background:#c9c2b0"></i>Wall</span>
+    <span><i style="background:#a07850"></i>Door</span>
+    <span><i style="background:#8ab4cc"></i>Window</span>
+    <span><i style="background:#e07a3a"></i>Barricaded</span>
+    <span><i style="background:#56677a"></i>Car</span>
+    <span><i style="background:#2b2c30;border:1px solid #555"></i>Road</span>
+    <span><i class="round" style="background:#ff7a59"></i>Your pins</span>
+    <span><i class="round" style="background:#7fe08a"></i>The bus (once you know)</span>
+  </div>
+</div>
+<div id="help" class="panel center" hidden>
+  <header><h2>How to stay alive</h2><button class="x" data-close>×</button></header>
+  <div class="helpbody">
+    <div class="cols">
+      <div>
+        <h3>Controls</h3>
+        <table class="keys">
+          <tr><td>W A S D</td><td>Move</td></tr>
+          <tr><td>Shift</td><td>Run (loud)</td></tr>
+          <tr><td>C</td><td>Sneak on / off (quiet, harder to see)</td></tr>
+          <tr><td>Left click</td><td>Attack towards the mouse</td></tr>
+          <tr><td>E</td><td>Do the highlighted thing</td></tr>
+          <tr><td>Right click</td><td>Everything you can do with a thing</td></tr>
+          <tr><td>G</td><td>Throw your readied item at the mouse</td></tr>
+          <tr><td>F</td><td>Flashlight</td></tr>
+          <tr><td>Q</td><td>Quick first aid (bandage, clean, painkillers)</td></tr>
+          <tr><td>R</td><td>Take everything (with a container open)</td></tr>
+          <tr><td>Tab / I</td><td>Bag</td></tr>
+          <tr><td>B</td><td>Craft</td></tr>
+          <tr><td>M</td><td>Map</td></tr>
+          <tr><td>J</td><td>Journal: documents, radio, field guide</td></tr>
+          <tr><td>Wheel</td><td>Zoom</td></tr>
+          <tr><td>Esc</td><td>Close / pause</td></tr>
+          <tr><td>Bag</td><td>Click an item to see what it does. Double click puts it in the open container</td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>The robots</h3>
+        <p><b>Tenders</b> were house assistants. They hear well, hit hard, and open unlocked doors.</p>
+        <p><b>Lamplighters</b> are drones with searchlights. They never attack. If one sees you, every robot nearby comes running. Stay out of the light, or knock it down.</p>
+        <p><b>Rovers</b> (from day 2) are fast and fragile. <b>Breakers</b> (from day 3) smash through barricades.</p>
+        <p>Robots follow noise. Running, fighting, hammering and breaking glass all carry. Sneak in bushes and they can barely see you. Hit one that hasn't noticed you and it takes far more damage.</p>
+      </div>
+      <div>
+        <h3>Surviving</h3>
+        <p>Eat, drink and sleep. Canned food needs an opener, a knife or a screwdriver. The taps will stop in a few days, so collect bottles and build a rain barrel.</p>
+        <p>Bleeding kills fast. Bandage wounds (rags work, but can infect). Antiseptic cures infection.</p>
+        <p>With a hammer, planks and nails you can barricade doors and windows. Tenders can open a door that isn't barricaded. Saw furniture for planks; unscrew electronics for parts. Robot wrecks hold scrap, wiring and power cells for jammers and pulse charges.</p>
+        <p>Every night at 23:00 something sweeps the county towards wherever you were last heard. Keep quiet in the evening, or sit under a jammer, and it combs some other street.</p>
+        <h3>The story</h3>
+        <p>Documents are hidden in furniture all over town, and a wind-up radio picks up Faraday Free Radio at dawn. Listen to it. Someone out there has a plan to get people out.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="journal" class="panel center wide" hidden>
+  <header><h2>Journal</h2>
+    <nav class="tabs" id="jTabs">
+      <button data-tab="docs" class="on">Documents</button>
+      <button data-tab="radio">Radio</button>
+      <button data-tab="guide">Field guide</button>
+    </nav>
+    <button class="x" data-close>×</button></header>
+  <div class="jbody">
+    <div class="jlist" id="jList"></div>
+    <div class="jread" id="jRead"></div>
+  </div>
+</div>
+<div id="settings" class="panel center narrow" hidden>
+  <header><h2>Settings</h2><button class="x" data-close>×</button></header>
+  <div class="setbody">
+    <label class="row">Volume <input type="range" id="setVol" min="0" max="100"></label>
+    <label class="row check"><input type="checkbox" id="setShake"> Screen shake</label>
+    <label class="row check"><input type="checkbox" id="setRings"> Show noise rings</label>
+    <label class="row">Interface size <select id="setUi"><option value="auto">Automatic</option><option value="0.9">Small</option><option value="1">Normal</option><option value="1.2">Large</option><option value="1.4">Larger</option><option value="1.6">Largest</option></select></label>
+    <label class="row check"><input type="checkbox" id="setPause"> Pause while reading documents</label>
+    <label class="row check"><input type="checkbox" id="setMenuPause"> Pause while the map, journal or crafting is open</label>
+    <label class="row check"><input type="checkbox" id="setRadar"> Corner minimap</label>
+    <label class="row check"><input type="checkbox" id="setTips"> Tips for new players</label>
+    <label class="row check"><input type="checkbox" id="setBlur"> Pause when the window loses focus</label>
+    <div class="row"><button class="btn ghost" id="setResetTips">Show all tips again</button></div>
+  </div>
+</div>
+<div id="reader" class="screen dim" hidden>
+  <div class="paper" id="paper">
+    <div class="paper-from" id="rFrom"></div>
+    <h3 id="rTitle"></h3>
+    <div class="paper-body" id="rBody"></div>
+    <div class="paper-note" id="rNote"></div>
+    <div class="title-btns"><button class="btn" id="rClose">Put it away</button></div>
+  </div>
+</div>
+<div id="pause" class="screen dim" hidden>
+  <div class="pausecard">
+    <div class="who-sum" id="pauseWho"></div>
+    <div class="pstats" id="pauseStats"></div>
+    <div class="title-btns col">
+      <button class="btn" id="resumeBtn">Resume</button>
+      <button class="btn ghost" id="journalBtn">Journal</button>
+      <button class="btn ghost" id="pauseSettings">Settings</button>
+      <button class="btn ghost" id="helpBtn">How to play</button>
+      <button class="btn ghost" id="quitBtn">Save and quit to title</button>
+    </div>
+  </div>
+</div>
+<div id="death" class="screen dim" hidden>
+  <div class="endcard">
+    <p class="kicker">Faraday County</p>
+    <h1 class="red">You died</h1>
+    <p class="lede" id="deathText"></p>
+    <div class="deathstats" id="deathStats"></div>
+    <p class="epitaph" id="epitaph"></p>
+    <div class="title-btns"><button class="btn big" id="againBtn">New life</button><button class="btn big ghost" id="deathMenu">Title</button></div>
+    <p class="small">Your save has been erased. Your name is in the Memorial.</p>
+    <p class="small seedline" id="deathSeed"></p>
+  </div>
+</div>
+<div id="win" class="screen dim" hidden>
+  <div class="endcard">
+    <p class="kicker" id="winKicker">North end of Route 9 &middot; the county line</p>
+    <h1 class="green" id="winTitle">You got out</h1>
+    <p class="lede" id="winText"></p>
+    <div class="deathstats" id="winStats"></div>
+    <p class="epitaph" id="winEpitaph">Behind you, every window of the Depot is lit. Dot is at the front of the bus, already counting heads, already talking about going back.</p>
+    <div class="title-btns"><button class="btn big" id="winAgain">New life</button><button class="btn big ghost" id="winMenu">Title</button></div>
+    <p class="small seedline" id="winSeed"></p>
+  </div>
+</div>
+<div id="backdrop" hidden></div>
+<div id="ctx" class="ctxmenu" hidden></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
