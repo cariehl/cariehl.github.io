@@ -173,8 +173,8 @@ export function createAmericanTable(d) {
     $('#roundName').textContent = `Hand ${g.handNo + 1}/${g.totalHands}`;
     $('#roundSub').textContent = H.charleston ? `${STAGE_NAME[H.charleston.stage]}` : H.phase === 'charleston' ? 'Charleston' : `${seats[g.dealer].name} dealt`;
     $('#wallLeft').textContent = H.wall.length;
-    $('#centerRound').textContent = H.phase === 'charleston' ? 'Charleston' : `Hand ${g.handNo + 1}`;
-    $('#centerWall').textContent = H.charleston ? `pass ${DIR_NAME[H.charleston.dir]}` : `${H.wall.length} left`;
+    $('#centerRound').textContent = H.charleston ? `Pass ${DIR_NAME[H.charleston.dir]}` : H.phase === 'charleston' ? 'Charleston' : `Hand ${g.handNo + 1}`;
+    $('#centerWall').textContent = H.charleston ? STAGE_NAME[H.charleston.stage] : `${H.wall.length} left`;
     $('.bar-dora small').textContent = g.card.name;
     const dr = $('#doraRow');
     dr.innerHTML = '';
@@ -209,6 +209,8 @@ export function createAmericanTable(d) {
     renderActions();
     renderHint();
     $('#dock').classList.toggle('acting', !!$('#actions').childElementCount);
+    // the hint strip sits above the buttons, however many rows they wrap to
+    $('#dock').style.setProperty('--actions-h', `${$('#actions').offsetHeight}px`);
     d.updateMatches();
   }
 
@@ -294,8 +296,8 @@ export function createAmericanTable(d) {
       return;
     }
     if (ui.courtesy) {
-      box.appendChild(el('span', 'note', 'Courtesy pass across: how many?'));
-      for (const n of [0, 1, 2, 3]) box.appendChild(btn(String(n), n ? '' : 'pass', () => ui.courtesy.resolve(n)));
+      box.appendChild(el('span', 'note', 'Courtesy pass across: how many tiles?'));
+      for (const n of [0, 1, 2, 3]) box.appendChild(btn(String(n), 'num' + (n ? '' : ' pass'), () => ui.courtesy.resolve(n)));
       return;
     }
     if (ui.turn) {

@@ -310,3 +310,9 @@ body.american .layer > .melds { gap: 0.6cqw; }
 .made-tag { color: var(--good); font-weight: 700; }
 .card-progress-row { padding: 10px 12px; }
 .card-note { color: var(--accent) !important; margin: 4px 0 0 !important; }
+/* American prompts: the instruction gets its own line, the hint strip clears every button row */
+body.american #actions .note { flex-basis: 100%; text-align: center; text-shadow: 0 1px 2px #000; }
+body.american #actions .btn.num { min-width: 52px; padding-left: 12px; padding-right: 12px; }
+body.american #dock.acting #waits { bottom: calc(100% + var(--actions-h, 50px)); }
+body.american #center b { font-size: 3.8cqw; }
+body.american #center small { font-size: 2.4cqw; }

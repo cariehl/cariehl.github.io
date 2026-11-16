@@ -143,6 +143,7 @@ export class AmericanGame {
     for (let s = 0; s < 4; s++) for (const id of out[s]) H.players[s].hand.splice(H.players[s].hand.indexOf(id), 1);
     for (let s = 0; s < 4; s++) H.players[(s + dir) % 4].hand.push(...out[s]);
     await this.emit('charleston', { stage, dir, passed: out, counts });
+    H.charleston = null;
   }
 
   // a pass must be `count` different tiles from the hand, none of them jokers
