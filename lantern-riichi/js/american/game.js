@@ -285,7 +285,7 @@ export class AmericanGame {
     const hand = (from === null ? p.hand.filter((id) => id !== tile) : p.hand.slice()).sort((a, b) => amType(a) - amType(b) || a - b);
     const entry = {
       seat, from, tile, value: v, base: win.base, jokerless: win.jokerless,
-      handId: win.hand.id, handText: win.hand.text, section: win.hand.section, concealed: !!win.hand.concealed,
+      handId: win.hand.id, handText: win.hand.text, altText: win.target.text, section: win.hand.section, concealed: !!win.hand.concealed,
       hand, exposures: p.exposures.map(exposureRecord), points: deltas[seat],
       units: win.target.units,
     };

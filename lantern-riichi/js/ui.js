@@ -11,6 +11,9 @@ import * as W from './wallet.js';
 import { amType, amTileName, amTileLongName } from './american/tiles.js';
 import { AmericanGame } from './american/game.js';
 import { createAmericanTable } from './american/table.js';
+import { createFocus } from './focus.js';
+import { setCustomCards, allCards, cardById } from './american/card.js';
+import { loadCustomCards, saveCustomCards, parseCardText, cardToText, TEMPLATE } from './american/custom.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, html) => {
@@ -28,7 +31,7 @@ const signed = (n) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '0');
 const SETTINGS_KEY = 'lantern-riichi.settings.v1';
 const SAVE_KEY = 'lantern-riichi.save.v1';
 const settings = Object.assign(
-  { mode: 'riichi', amCard: 'lantern-2026', opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, doraTint: true, speed: 'normal', tapMode: 'auto' },
+  { mode: 'riichi', amCard: 'lantern-2026', opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, doraTint: true, speed: 'normal', tapMode: 'auto', focus: false, focusTab: 'hands' },
   readJSON(SETTINGS_KEY) || {},
 );
 function readJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } }
@@ -55,6 +58,7 @@ function applyLooks() {
   document.body.classList.toggle('labels', settings.tileStyle === 'labels');
   document.body.classList.toggle('red-tint', !!settings.redTint);
   document.body.classList.toggle('dora-tint', !!settings.doraTint);
+  document.body.classList.toggle('focus', !!settings.focus);
   setTileStyle(settings.tileStyle);
 }
 function myAvatar() {
@@ -135,8 +139,10 @@ const isAm = () => settings.mode === 'american';
 function renderMenu() {
   const am = isAm();
   for (const b of document.querySelectorAll('#modeSeg button')) b.classList.toggle('on', b.dataset.v === settings.mode);
+  const amCard = cardById(settings.amCard);
+  $('#amSub').textContent = `${amCard.name}, jokers, Charleston`;
   $('#lede').textContent = am
-    ? 'American mahjong against the 2026 card: Charleston, jokers and exposures. Pick three opponents; each one plays its own way.'
+    ? `American mahjong against ${amCard.custom ? 'your card' : 'the 2026 card'}: Charleston, jokers and exposures. Pick three opponents; each one plays its own way.`
     : 'Four-player riichi mahjong at a late-night table. Pick three opponents; each one plays its own way.';
   const lens = am ? [['Short game', '4 hands'], ['Long game', '8 hands']] : [['East round', '4+ hands'], ['Half game', 'East + South']];
   document.querySelectorAll('#lengthSeg button').forEach((b, i) => { $('.len-name', b).textContent = lens[i][0]; $('.len-sub', b).textContent = lens[i][1]; });
@@ -191,7 +197,99 @@ $('#randomBtn').onclick = () => {
   renderMenu();
 };
 for (const b of document.querySelectorAll('#modeSeg button')) b.onclick = () => { settings.mode = b.dataset.v; saveSettings(); renderMenu(); };
-$('#cardBtn').onclick = () => AM.cardSheet();
+$('#cardBtn').onclick = () => cardsSheet();
+$('#focusBtn').onclick = () => setFocus(!settings.focus);
+
+// ---------------------------------------------------------------- cards
+
+// Cards you typed in live in this browser only (js/american/custom.js).
+let customCards = loadCustomCards();
+setCustomCards(customCards);
+function storeCustomCards() { saveCustomCards(customCards); setCustomCards(customCards); }
+
+function cardsSheet() {
+  return openSheet((box, done) => {
+    box.appendChild(el('h2', '', 'Cards'));
+    box.appendChild(el('p', 'sub', 'Pick the card American games are played against. The official card is published each year by the National Mah Jongg League, which sells it and holds its copyright, so it isn’t included here. If you have this year’s or last year’s card, add it below by typing its hands: it stays in this browser and nowhere else.'));
+    for (const card of allCards()) {
+      const row = el('div', 'card-pick' + (card.id === settings.amCard ? ' on' : ''));
+      const n = card.sections.reduce((a, sec) => a + sec.hands.length, 0);
+      const pick = el('button', 'cp-main', `<span class="cp-dot"></span><span><b>${esc(card.name)}</b><small>${n} hands · ${card.custom ? 'yours, saved in this browser' : 'original, built in'}</small></span>`);
+      pick.onclick = () => { settings.amCard = card.id; saveSettings(); renderMenu(); done(); cardsSheet(); };
+      row.appendChild(pick);
+      const acts = el('div', 'cp-acts');
+      acts.appendChild(btn('View', 'ghost small', () => { done(); AM.cardSheet(card.id); }));
+      if (card.custom) {
+        acts.appendChild(btn('Edit', 'ghost small', () => { done(); cardEditor(card); }));
+        acts.appendChild(btn('Delete', 'danger small', () => {
+          if (!confirm(`Delete “${card.name}”? Your record of hands made on it is kept.`)) return;
+          customCards = customCards.filter((c) => c.id !== card.id);
+          storeCustomCards();
+          if (settings.amCard === card.id) { settings.amCard = 'lantern-2026'; saveSettings(); }
+          renderMenu(); done(); cardsSheet();
+        }));
+      }
+      row.appendChild(acts);
+      box.appendChild(row);
+    }
+    const btns = el('div', 'sheet-btns');
+    btns.appendChild(btn('Add your card', 'ghost', () => { done(); cardEditor(null); }));
+    btns.appendChild(btn('Done', 'big', () => done()));
+    box.appendChild(btns);
+  });
+}
+
+const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+
+// Type or paste a card, or load a .txt file; the hands are checked as you type.
+function cardEditor(card) {
+  return openSheet((box, done) => {
+    box.appendChild(el('h2', '', card ? `Edit ${esc(card.name)}` : 'Add your card'));
+    box.appendChild(el('p', 'sub', 'One hand per line, in the card’s own order. Write each group with a suit letter: groups with the same letter share a suit, different letters are different suits (any suits you like), just like the card’s colours. <b>0</b> is Soap (White dragon), <b>D</b> the dragon of the group’s suit, <b>F</b> a flower, <b>N E W S</b> winds. After the hand, separated by <b>|</b>: its value, <b>C</b> if concealed, <b>shift 1</b> for “any consecutive numbers” (<b>shift 2</b> for any even or odd), and a note. Write <b>or</b> between versions of one hand. <b>[Name]</b> starts a section, <b>#</b> names the card.'));
+    box.appendChild(el('pre', 'cp-example', esc('# My 2026 card\n[2026]\nFFFF 2026a 222b 222c or FFFF 2026a 555b 555c | 25 | Kongs 2s or 5s\n[Quints]\n11111a 2222b 33333c | 40 | shift 1 | Any 3 consec. nos.\n[Singles and Pairs]\nFF 2026a 2026b 22c 66c | 50 | C')));
+    const ta = el('textarea', 'cp-text');
+    ta.spellcheck = false;
+    ta.value = card ? card.source : TEMPLATE;
+    box.appendChild(ta);
+    const status = el('div', 'cp-status');
+    box.appendChild(status);
+    let parsed = null;
+    const check = () => {
+      parsed = parseCardText(ta.value, card ? card.id : `custom-${Date.now().toString(36)}`);
+      const n = parsed.card ? parsed.card.sections.reduce((a, sec) => a + sec.hands.length, 0) : 0;
+      status.innerHTML = `<b class="${n ? 'pos' : 'neg'}">${n} hand${n === 1 ? '' : 's'} read</b>${parsed.card ? ` in ${parsed.card.sections.length} section${parsed.card.sections.length === 1 ? '' : 's'}, card “${esc(parsed.card.name)}”` : ''}` +
+        (parsed.errors.length ? `<ul class="cp-errs">${parsed.errors.slice(0, 8).map((e) => `<li>Line ${e.line}: ${esc(e.msg)}</li>`).join('')}${parsed.errors.length > 8 ? `<li>…and ${parsed.errors.length - 8} more</li>` : ''}</ul>` : '');
+      save.disabled = !n;
+      save.style.opacity = n ? 1 : 0.5;
+    };
+    ta.oninput = check;
+    const file = el('input');
+    file.type = 'file';
+    file.accept = '.txt,text/plain';
+    file.hidden = true;
+    file.onchange = async () => { const f = file.files[0]; if (f) { ta.value = await f.text(); check(); } };
+    box.appendChild(file);
+    const btns = el('div', 'sheet-btns');
+    btns.appendChild(btn('Load a .txt file', 'ghost', () => file.click()));
+    btns.appendChild(btn('Copy the Lantern card as a start', 'ghost', () => { if (ta.value.trim() && !confirm('Replace what you have typed?')) return; ta.value = cardToText(cardById('lantern-2026')); check(); }));
+    btns.appendChild(btn('Cancel', 'pass', () => { done(); cardsSheet(); }));
+    const save = btn('Save card', 'big', () => {
+      if (!parsed || !parsed.card) return;
+      if (parsed.errors.length && !confirm(`${parsed.errors.length} line${parsed.errors.length === 1 ? '' : 's'} couldn’t be read and will be left out. Save anyway?`)) return;
+      const i = customCards.findIndex((c) => c.id === parsed.card.id);
+      if (i >= 0) customCards[i] = parsed.card; else customCards.push(parsed.card);
+      storeCustomCards();
+      settings.amCard = parsed.card.id;
+      saveSettings();
+      renderMenu();
+      done();
+      cardsSheet();
+    });
+    btns.appendChild(save);
+    box.appendChild(btns);
+    check();
+  });
+}
 for (const b of document.querySelectorAll('#lengthSeg button')) b.onclick = () => { settings.length = b.dataset.v; saveSettings(); renderMenu(); };
 $('#startBtn').onclick = () => { if (settings.opponents.length === 3) startGame(null); };
 $('#continueBtn').onclick = () => { const s = readJSON(SAVE_KEY); if (s) startGame(s); };
@@ -342,6 +440,7 @@ const AM = createAmericanTable({
   waitUnpaused: () => waitUnpaused(),
   oneTap: () => settings.tapMode === 'one' || (settings.tapMode === 'auto' && pointerKind === 'mouse'),
   render: () => render(),
+  renderFocus: () => FOCUS.render(),
   updateMatches: () => updateMatches(),
   deltasEl: (dl, sc) => deltasEl(dl, sc),
   helperPersona: () => personaById('kuma'),
@@ -353,6 +452,72 @@ const AM = createAmericanTable({
     return () => { pauseGate = null; release(); };
   },
 });
+
+// Focus mode (js/focus.js): a big hand and a panel in place of the table.
+const FOCUS = createFocus({
+  $, el, settings, ui, saveSettings, typeTile,
+  game: () => game,
+  seats: () => seats,
+  render: () => render(),
+  visibleRemaining: (s, h) => visibleRemaining(s, h),
+  amHands: (box) => AM.focusHands(box),
+  info: () => (game.mode === 'american' ? AM.focusInfo() : riichiFocusInfo()),
+});
+
+function riichiFocusInfo() {
+  const g = game, H = g.h;
+  return {
+    rows: [['Man', [0, 1, 2, 3, 4, 5, 6, 7, 8]], ['Pin', [9, 10, 11, 12, 13, 14, 15, 16, 17]], ['Sou', [18, 19, 20, 21, 22, 23, 24, 25, 26]], ['Honors', [27, 28, 29, 30, 31, 32, 33]]],
+    unseen: visibleRemaining(0, H.players[0].hand),
+    wall: H.wall.length,
+    typeTile,
+    tile: tileEl,
+    exposures: (s) => H.players[s].melds.map(meldEl),
+    discards: (s) => H.players[s].discards,
+    seatLine: (s) => {
+      const p = H.players[s], w = g.seatWind(s);
+      return `${p.riichi ? '<span class="riichi-tag">Riichi</span>' : ''}${WIND_NAMES[w]}${w === 0 ? ' · dealer' : ''} · ${fmt(g.scores[s])}`;
+    },
+  };
+}
+
+function setFocus(on) {
+  settings.focus = on;
+  saveSettings();
+  applyLooks();
+  if (game) render();
+}
+
+// One line in focus mode's log for each thing that happens at the table.
+let lastCaller = null;
+function logEvent(type, d, g) {
+  const names = seats.map((s) => s.name);
+  const am = g.mode === 'american';
+  const tn = (id) => (am ? amTileLongName(amType(id)) : tileLongName(typeOf(id)));
+  const tt = (t) => (am ? amTileLongName(t) : tileLongName(t));
+  const say = (x) => { FOCUS.note(x); };
+  switch (type) {
+    case 'handStart': FOCUS.reset(); lastCaller = null; say(am ? g.handName() : roundName(g.round)); break;
+    case 'charleston': say(`Charleston: everyone passed ${{ 1: 'right', 2: 'across', 3: 'left' }[d.dir]}`); break;
+    case 'courtesy': say(`Courtesy pass: ${d.counts[0]} across`); break;
+    case 'discard':
+      // "Rin called 5 Bam from Kuma (pung), discarded Flower" reads as one move
+      if (lastCaller === d.seat) FOCUS.amend(`, discarded ${tn(d.tile)}`);
+      else say(`${names[d.seat]} discarded ${tn(d.tile)}${d.riichi ? ' and declared riichi' : ''}`);
+      lastCaller = null;
+      break;
+    case 'call': {
+      lastCaller = d.seat;
+      const what = am ? { 3: 'pung', 4: 'kong', 5: 'quint', 6: 'sextet' }[d.exposure.n] : { pon: 'pon', chi: 'chi', minkan: 'kan' }[d.type];
+      const t = am ? d.exposure.t : typeOf(d.meld.called ?? d.meld.tiles[0]);
+      say(`${names[d.seat]} called ${tt(t)} from ${names[d.from]} (${what})`);
+      break;
+    }
+    case 'swap': say(`${names[d.seat]} swapped for a joker in ${d.owner === d.seat ? 'their own' : `${names[d.owner]}’s`} exposure`); break;
+    case 'kan': say(`${names[d.seat]} declared a kan`); break;
+    case 'handEnd': say(d.kind === 'mahjong' ? `${names[d.wins[0].seat]}: Mahjong!` : d.kind === 'ron' || d.kind === 'tsumo' ? `${d.wins.map((w) => names[w.seat]).join(' and ')}: ${d.kind}` : 'Draw'); break;
+  }
+}
 
 // ---------------------------------------------------------------- game flow
 
@@ -381,7 +546,8 @@ async function startGame(save) {
   }
   game.opponents = opp;
   game.stake = stake;
-  Object.assign(ui, { turn: null, react: null, selected: null, riichiMode: false, reveal: false, pass: null, vote: null, courtesy: null, swapPick: false, fresh: null });
+  Object.assign(ui, { turn: null, react: null, selected: null, riichiMode: false, reveal: false, pass: null, vote: null, courtesy: null, swapPick: false, fresh: null, amPin: null, lastDiscard: null });
+  FOCUS.reset();
   document.body.classList.toggle('american', american);
   show('game');
   const g = game;
@@ -400,6 +566,7 @@ async function onEvent(type, d, g) {
   if (g !== game) throw new Quit(); // the player left this game
   await waitUnpaused();
   if (g !== game) throw new Quit();
+  logEvent(type, d, g);
   if (g.mode === 'american') {
     if (type === 'handStart') writeJSON(SAVE_KEY, { state: g.handStartSnapshot, opponents: g.opponents, stake: g.stake.id });
     if (type === 'gameEnd') await finishGame(d, g);
@@ -523,6 +690,7 @@ function render(fresh = false) {
   renderWaits();
   $('#dock').classList.toggle('acting', !!$('#actions').childElementCount);
   updateMatches();
+  FOCUS.render();
 }
 
 // Highlight tiles on the table (discards and open melds) that match the tile picked in hand.
@@ -560,8 +728,8 @@ function renderHand() {
     const e = tileEl(id, { cls: (dim ? 'dim' : '') + (gap ? ' gap' : '') + (ui.selected === id ? ' sel' : '') + (r !== undefined ? ' ready' + (r ? ' noyaku' : '') : '') + (ui.react && typeOf(id) === typeOf(ui.react.tile) ? ' hl' : '') });
     e.onclick = () => onTileTap(id);
     // mouse: hovering previews the waits and matching table tiles, since one click discards
-    e.onpointerenter = (ev) => { if (ev.pointerType === 'mouse') { ui.hover = id; updateMatches(); renderWaits(); } };
-    e.onpointerleave = () => { if (ui.hover === id) { ui.hover = null; updateMatches(); renderWaits(); } };
+    e.onpointerenter = (ev) => { if (ev.pointerType === 'mouse') { ui.hover = id; updateMatches(); renderWaits(); FOCUS.render(); } };
+    e.onpointerleave = () => { if (ui.hover === id) { ui.hover = null; updateMatches(); renderWaits(); FOCUS.render(); } };
     hand.appendChild(e);
   };
   ids.forEach((id) => add(id, false));
@@ -873,6 +1041,7 @@ function settingToggles(card) {
     row.appendChild(input);
     card.appendChild(row);
   };
+  tog('focus', 'Focus mode', 'A big hand and a panel of hands you are close to, tiles left and the table log, in place of the table (also the ◎ button at the table)');
   tog('showWaits', 'Show waits', 'Show which tiles finish a ready hand, mark discards that leave you ready, and warn on furiten');
   tog('autoWin', 'Auto-win', 'Declare ron and tsumo for you');
   tog('noCalls', 'No calls', 'Skip pon, chi and kan prompts');

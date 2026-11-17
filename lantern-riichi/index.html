@@ -6,7 +6,7 @@
 <meta name="description" content="Riichi or American mahjong against six bots with their own habits: a caller, a wall, a closed-hand purist, a value hunter, a gambler and a steady hand.">
 <meta name="theme-color" content="#14231f">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏮</text></svg>">
-<title>Lantern Riichi</title>
+<title>Lantern Mahjong</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
 <div id="menu" class="screen">
   <div class="menu-card">
     <div class="lanterns" aria-hidden="true"><span>🏮</span><span>🏮</span><span>🏮</span></div>
-    <h1>Lantern Riichi</h1>
+    <h1>Lantern Mahjong</h1>
     <p class="lede" id="lede">Four-player riichi mahjong at a late-night table. Pick three opponents; each one plays its own way.</p>
 
     <div class="wallet">
@@ -27,7 +27,7 @@
     <h2>Game</h2>
     <div class="seg" id="modeSeg">
       <button data-v="riichi">Riichi <small>Japanese rules, 136 tiles</small></button>
-      <button data-v="american">American <small>2026 card, jokers, Charleston</small></button>
+      <button data-v="american">American <small id="amSub">2026 card, jokers, Charleston</small></button>
     </div>
 
     <h2>Opponents <small id="pickCount">3 of 3</small></h2>
@@ -51,7 +51,7 @@
     <div class="row-btns">
       <button class="btn ghost" id="historyBtn">Game history</button>
       <button class="btn ghost" id="rulesBtn">Rules &amp; yaku</button>
-      <button class="btn ghost" id="cardBtn" hidden>The card</button>
+      <button class="btn ghost" id="cardBtn" hidden>Cards</button>
       <button class="btn ghost" id="settingsBtn">Settings</button>
     </div>
   </div>
@@ -63,6 +63,7 @@
     <div class="bar-round"><b id="roundName">East 1</b><small id="roundSub">0 honba</small></div>
     <div class="bar-dora"><small>Dora</small><div id="doraRow" class="tiles"></div></div>
     <div class="bar-wall"><b id="wallLeft">70</b><small>left</small></div>
+    <button class="icon-btn" id="focusBtn" aria-label="Focus mode" title="Focus mode: big hand, closest hands, tiles left">◎</button>
   </header>
   <div id="opps">
     <div class="plate" data-rel="3"></div>
@@ -83,6 +84,10 @@
     <div id="waits" hidden></div>
     <div id="actions"></div>
     <div id="hand" class="tiles"></div>
+  </div>
+  <div id="focus" hidden>
+    <div class="fx-head"><div class="fx-tabs"></div><div class="fx-last"></div></div>
+    <div class="fx-body"></div>
   </div>
 </div>
 

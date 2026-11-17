@@ -115,4 +115,8 @@ export const CARDS = [
   },
 ];
 
-export const cardById = (id) => CARDS.find((c) => c.id === id) || CARDS[0];
+// Cards the player typed in (custom.js), registered by the page at start-up.
+let custom = [];
+export function setCustomCards(list) { custom = list.slice(); }
+export const allCards = () => CARDS.concat(custom);
+export const cardById = (id) => CARDS.find((c) => c.id === id) || custom.find((c) => c.id === id) || CARDS[0];

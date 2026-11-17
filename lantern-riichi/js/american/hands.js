@@ -33,14 +33,20 @@ function symbolType(sym, suit, shift) {
 const PERMS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
 
 // All concrete unit lists for one hand on the card.
+// A hand may list versions separated by " or " ("FF 222a 222b ... or FF 555a 555b ...").
 export function expandHand(hand) {
-  const groups = parseGroups(hand.text);
+  const seen = new Set();
+  const out = [];
+  for (const alt of hand.text.split(/\s+or\s+/i)) expandText(alt, hand, seen, out);
+  return out;
+}
+
+function expandText(text, hand, seen, out) {
+  const groups = parseGroups(text);
   const digits = groups.flatMap((g) => g.symbols.filter((s) => /[1-9]/.test(s)).map(Number));
   const maxD = digits.length ? Math.max(...digits) : 9;
   const shifts = [0];
   if (hand.shift) for (let k = hand.shift; maxD + k <= 9; k += hand.shift) shifts.push(k);
-  const seen = new Set();
-  const out = [];
   for (const perm of PERMS) {
     for (const k of shifts) {
       const units = [];
@@ -56,10 +62,10 @@ export function expandHand(hand) {
       const key = units.map((u) => `${u.t}x${u.n}`).sort().join(' ');
       if (seen.has(key)) continue;
       seen.add(key);
+      units.alt = text;
       out.push(units);
     }
   }
-  return out;
 }
 
 function makeTarget(units, hand) {
@@ -76,6 +82,7 @@ function makeTarget(units, hand) {
   for (let t = 0; t < NTYPES; t++) if (nonj[t] || jok[t]) types.push(t);
   return {
     hand, units, nonj, jok, sets, types,
+    text: units.alt || hand.text, // the version of the hand this target makes
     size: units.reduce((s, u) => s + u.n, 0),
     concealed: !!hand.concealed,
     value: hand.value,
@@ -84,9 +91,10 @@ function makeTarget(units, hand) {
 }
 
 // Compile a card: a flat list of its hands (with ids and section names) and all their targets.
-const compiled = new Map();
+// Cached per card object, so an edited custom card (a new object) compiles afresh.
+const compiled = new WeakMap();
 export function compileCard(card) {
-  if (compiled.has(card.id)) return compiled.get(card.id);
+  if (compiled.has(card)) return compiled.get(card);
   const hands = [];
   const targets = [];
   card.sections.forEach((sec, si) => {
@@ -97,7 +105,7 @@ export function compileCard(card) {
     });
   });
   const out = { card, hands, targets };
-  compiled.set(card.id, out);
+  compiled.set(card, out);
   return out;
 }
 

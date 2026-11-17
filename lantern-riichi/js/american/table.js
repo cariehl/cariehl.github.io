@@ -212,6 +212,7 @@ export function createAmericanTable(d) {
     // the hint strip sits above the buttons, however many rows they wrap to
     $('#dock').style.setProperty('--actions-h', `${$('#actions').offsetHeight}px`);
     d.updateMatches();
+    d.renderFocus();
   }
 
   function renderHand() {
@@ -227,15 +228,19 @@ export function createAmericanTable(d) {
       ids = ids.filter((x) => x !== drawn);
     }
     const allowed = ui.turn ? new Set(ui.turn.opts.discards) : ui.pass ? new Set(p.hand.filter((id) => !isJoker(id))) : null;
+    // focus mode with a hand pinned: mark the tiles that hand has no use for
+    const spare = spareTiles(p);
     if (ui.hover !== null && (!allowed || !allowed.has(ui.hover))) ui.hover = null;
     const add = (id, gap) => {
       const dim = allowed && !allowed.has(id);
       const sel = ui.pass ? ui.pass.sel.includes(id) : ui.selected === id;
       const hl = (ui.fresh && ui.fresh.has(id)) || (ui.react && amType(id) === amType(ui.react.tile));
-      const e = amTile(id, { cls: (dim ? 'dim' : '') + (gap ? ' gap' : '') + (sel ? ' sel' : '') + (hl ? ' hl' : '') });
+      let sp = false;
+      if (spare && spare[amType(id)] > 0) { spare[amType(id)]--; sp = true; }
+      const e = amTile(id, { cls: (dim ? 'dim' : '') + (gap ? ' gap' : '') + (sel ? ' sel' : '') + (hl ? ' hl' : '') + (sp ? ' spare' : '') });
       e.onclick = () => onTileTap(id);
-      e.onpointerenter = (ev) => { if (ev.pointerType === 'mouse' && ui.turn) { ui.hover = id; d.updateMatches(); renderHint(); } };
-      e.onpointerleave = () => { if (ui.hover === id) { ui.hover = null; d.updateMatches(); renderHint(); } };
+      e.onpointerenter = (ev) => { if (ev.pointerType === 'mouse' && ui.turn) { ui.hover = id; d.updateMatches(); renderHint(); d.renderFocus(); } };
+      e.onpointerleave = () => { if (ui.hover === id) { ui.hover = null; d.updateMatches(); renderHint(); d.renderFocus(); } };
       hand.appendChild(e);
     };
     ids.forEach((id) => add(id, false));
@@ -329,34 +334,41 @@ export function createAmericanTable(d) {
     }
   }
 
-  // Your closest hand on the card, drawn as tiles: the ones you hold, jokers standing in,
-  // and the ones still missing dimmed.
-  function targetRow(tg, c, exposures, cls = 'tg-row') {
-    const row = el('div', 'tiles ' + cls);
-    const have = c ? c.slice() : null;
+  // Which of your tiles a target uses: real tiles go to pairs and singles first, then sets;
+  // jokers fill what's left of sets. fill[i] has one entry per tile of unit i: 'x' exposed,
+  // 'n' a real tile you hold, 'j' a joker, null still missing. rest: counts left over.
+  function assign(tg, c, exposures) {
+    const rest = c ? c.slice() : null;
     const expLeft = exposures.map((e) => `${e.t}:${e.n}`);
     const fill = tg.units.map((u) => {
       const k = `${u.t}:${u.n}`;
       if (u.n >= 3 && expLeft.includes(k)) { expLeft.splice(expLeft.indexOf(k), 1); return new Array(u.n).fill('x'); }
       return new Array(u.n).fill(null);
     });
-    if (have) {
-      // real tiles go to pairs and singles first, then sets; jokers fill what's left of sets
+    if (rest) {
       for (const pass of [0, 1]) tg.units.forEach((u, i) => {
         if ((u.n >= 3) !== (pass === 1)) return;
-        fill[i] = fill[i].map((f) => (f === null && have[u.t] > 0 ? (have[u.t]--, 'n') : f));
+        fill[i] = fill[i].map((f) => (f === null && rest[u.t] > 0 ? (rest[u.t]--, 'n') : f));
       });
       tg.units.forEach((u, i) => {
-        if (u.n >= 3) fill[i] = fill[i].map((f) => (f === null && have[JOKER] > 0 ? (have[JOKER]--, 'j') : f));
+        if (u.n >= 3) fill[i] = fill[i].map((f) => (f === null && rest[JOKER] > 0 ? (rest[JOKER]--, 'j') : f));
       });
     }
+    return { fill, rest };
+  }
+
+  // Your closest hand on the card, drawn as tiles: the ones you hold, jokers standing in,
+  // and the ones still missing dimmed.
+  function targetRow(tg, c, exposures, cls = 'tg-row') {
+    const row = el('div', 'tiles ' + cls);
+    const { fill } = assign(tg, c, exposures);
     let lastG = -1;
     tg.units.forEach((u, i) => {
       if (lastG >= 0 && u.g !== lastG) row.appendChild(el('span', 'tg-gap'));
       lastG = u.g;
       for (const f of fill[i]) {
         if (f === 'j') row.appendChild(typeTile(JOKER));
-        else row.appendChild(typeTile(u.t, { cls: have && f === null ? 'dim missing' : f === 'x' ? 'exposed' : '' }));
+        else row.appendChild(typeTile(u.t, { cls: c && f === null ? 'dim missing' : f === 'x' ? 'exposed' : '' }));
       }
     });
     return row;
@@ -368,7 +380,7 @@ export function createAmericanTable(d) {
     box.hidden = true;
     box.classList.remove('am-hint');
     const g = game();
-    if (!settings.showWaits || !g || !g.h || ui.reveal) return;
+    if (!settings.showWaits || !g || !g.h || ui.reveal || settings.focus) return;
     const p = g.h.players[0];
     let hand = p.hand.slice();
     const pick = ui.pass ? null : ui.selected ?? ui.hover;
@@ -390,13 +402,120 @@ export function createAmericanTable(d) {
     box.hidden = false;
   }
 
+
+  // ---------------------------------------------------------------- focus mode
+
+  // The tiles you're judging: your hand, less the tile you've lifted to discard or picked to pass.
+  function judgedHand(p) {
+    let hand = p.hand.slice();
+    const pick = ui.pass ? null : ui.selected ?? ui.hover;
+    const picked = pick !== null && pick !== undefined && hand.includes(pick);
+    if (picked) hand.splice(hand.indexOf(pick), 1);
+    if (ui.pass) hand = hand.filter((id) => !ui.pass.sel.includes(id));
+    return { hand, picked: picked || !!(ui.pass && ui.pass.sel.length) };
+  }
+
+  function pinnedBest(p) {
+    const g = game();
+    if (ui.amPin === null || ui.amPin === undefined || !g || !g.h) return null;
+    const c = amCounts(p.hand), ex = exps(p);
+    return closestTargets(g.cc, c, ex, 0).find((x) => x.tg.hand.index === ui.amPin) || null;
+  }
+
+  // Counts of tile types the pinned hand doesn't use, or null.
+  function spareTiles(p) {
+    if (!settings.focus || ui.reveal) return null;
+    const b = pinnedBest(p);
+    if (!b) return null;
+    return assign(b.tg, amCounts(p.hand), exps(p)).rest;
+  }
+
+  // The Hands tab: every hand on the card, closest first, drawn in the suits you're nearest to.
+  // Tap one to pin it: it stays on top and the tiles it doesn't use are marked in your hand.
+  function focusHands(box) {
+    const g = game();
+    const p = g.h.players[0];
+    const { hand, picked } = judgedHand(p);
+    const c = amCounts(hand), ex = exps(p);
+    const full = hand.length + ex.reduce((s, e) => s + e.n, 0) === 14;
+    const list = closestTargets(g.cc, c, ex, 0);
+    const blocked = g.cc.hands.filter((h) => !list.some((x) => x.tg.hand === h));
+    const sum = summary(getRecord(), g.cc);
+    const head = el('div', 'fx-note');
+    head.innerHTML = `${picked ? (ui.pass ? '<b>After this pass</b> · ' : '<b>After this discard</b> · ') : ''}${list.length} hands possible${blocked.length ? `, ${blocked.length} blocked by your exposures` : ''} · <span class="muted">tap a hand to pin it</span>`;
+    box.appendChild(head);
+    const pin = list.find((x) => x.tg.hand.index === ui.amPin);
+    if (ui.amPin !== null && ui.amPin !== undefined && !pin) ui.amPin = null;
+    const order = pin ? [pin, ...list.filter((x) => x !== pin)] : list;
+    for (const x of order) box.appendChild(focusRow(x.tg.hand, x, c, ex, full, sum));
+    for (const h of blocked) box.appendChild(focusRow(h, null, c, ex, full, sum));
+  }
+
+  function focusRow(hand, best, c, ex, full, sum) {
+    const pinned = best && ui.amPin === hand.index;
+    const row = el('button', 'fx-hand' + (pinned ? ' pinned' : '') + (best ? '' : ' blocked'));
+    const m = best ? best.m : null;
+    const away = el('span', 'fx-away' + (m === null ? ' no' : m === 0 && full ? ' win' : m <= 2 ? ' near' : m <= 5 ? ' mid' : ''));
+    away.innerHTML = m === null ? '–' : m === 0 && full ? '✓' : `${m}<small>away</small>`;
+    row.appendChild(away);
+    const tg = best ? best.tg : game().cc.targets.find((x) => x.hand === hand);
+    row.appendChild(targetRow(tg, best ? c : null, best ? ex : [], 'tg-row fx-tiles'));
+    const mine = sum.hands[hand.text];
+    const meta = el('span', 'fx-meta');
+    meta.innerHTML = `${pinned ? '<span class="pin">📌</span>' : ''}<b>${hand.section}</b> <span class="v">${hand.concealed ? 'C' : 'X'} ${hand.value}</span>${mine && mine.wins ? ` <span class="made-tag">✓${mine.wins}</span>` : ''}${hand.note ? `<small>${hand.note}</small>` : ''}${best ? '' : '<small class="neg">Your exposures don’t fit</small>'}`;
+    row.appendChild(meta);
+    if (best) row.onclick = () => { ui.amPin = pinned ? null : hand.index; render(); };
+    return row;
+  }
+
+  // Tile groups for the Tiles tab: each suit with its dragon, then winds, flowers and jokers.
+  const TILE_ROWS = [
+    ['Craks', [0, 1, 2, 3, 4, 5, 6, 7, 8, 33]],
+    ['Bams', [18, 19, 20, 21, 22, 23, 24, 25, 26, 32]],
+    ['Dots', [9, 10, 11, 12, 13, 14, 15, 16, 17, 31]],
+    ['Winds', [27, 28, 29, 30]],
+    ['Others', [34, 35]],
+  ];
+  // How many of each type you can't see: 4 of most, 8 flowers, 8 jokers, less your hand,
+  // every discard and every exposed tile.
+  function unseen() {
+    const H = game().h;
+    const left = new Array(36).fill(4);
+    left[34] = 8; left[35] = 8;
+    const p0 = H.players[0];
+    for (const id of p0.hand) left[amType(id)]--;
+    for (const p of H.players) {
+      for (const x of p.discards) if (!x.called) left[amType(x.id)]--;
+      for (const e of p.exposures) for (const id of e.tiles) left[amType(id)]--;
+    }
+    return left.map((x) => Math.max(0, x));
+  }
+
+  function focusInfo() {
+    const g = game();
+    return {
+      rows: TILE_ROWS,
+      unseen: unseen(),
+      wall: g.h.wall.length,
+      typeTile,
+      tile: amTile,
+      exposures: (s) => g.h.players[s].exposures.map(exposureEl),
+      discards: (s) => g.h.players[s].discards,
+      seatLine: (s) => {
+        const p = g.h.players[s], w = g.seatWind(s);
+        return `${WIND_WORD[w]}${w === 0 ? ' · dealer' : ''} · ${signed(g.scores[s])}${p.exposures.length ? ` · ${p.exposures.length} exposed` : ''}`;
+      },
+    };
+  }
+
   // ---------------------------------------------------------------- the card
 
   function handText(hand) {
     const span = el('span', 'card-text');
-    for (const grp of parseGroups(hand.text)) {
-      span.appendChild(el('span', grp.suit ? `s${grp.suit}` : 'sn', grp.symbols.join('')));
-    }
+    hand.text.split(/\s+or\s+/i).forEach((alt, i) => {
+      if (i) span.appendChild(el('span', 'or', 'or'));
+      for (const grp of parseGroups(alt)) span.appendChild(el('span', grp.suit ? `s${grp.suit}` : 'sn', grp.symbols.join('')));
+    });
     return span;
   }
 
@@ -491,7 +610,7 @@ export function createAmericanTable(d) {
         card.appendChild(el('h2', '', `${names[w.seat]} ${w.seat === 0 ? 'win' : 'wins'}: Mahjong!`));
         card.appendChild(el('p', 'sub', `Hand ${rec.handNo + 1} · ${w.from === null ? 'self-picked' : `on ${names[w.from]}’s discard`}`));
         const head = el('div', 'card-top');
-        head.appendChild(handText({ text: w.handText }));
+        head.appendChild(handText({ text: w.altText || w.handText }));
         head.appendChild(el('span', 'card-val', `${w.section} · ${w.concealed ? 'C' : 'X'} ${w.base}`));
         card.appendChild(head);
         card.appendChild(winHandRow(w));
@@ -558,5 +677,5 @@ export function createAmericanTable(d) {
     <table class="yaku-table">${personas.map((p) => `<tr><td>${p.emoji} <b>${p.name}</b> · ${p.style}<small>${p.amBlurb}</small></td><td></td></tr>`).join('')}</table>`;
   }
 
-  return { human, botAgent, onEvent, render, cardSheet, cardProgressEl, historyItem, winHandRow, rulesHtml, handText };
+  return { human, botAgent, onEvent, render, cardSheet, cardProgressEl, historyItem, winHandRow, rulesHtml, handText, focusHands, focusInfo };
 }
