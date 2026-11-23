@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>cariehl · Games and apps</title>
   <meta name="description" content="Browser games and apps by cariehl.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d0b16">
   <style>
     :root {
       --bg: #0d0b16;
@@ -120,8 +123,10 @@
     <section class="games">
       <!-- To add a game: put its build in a folder (like orbs/) and copy this <a> block.
            Add data-mobile and a <span class="mobile">Mobile-friendly</span> tag if it plays well on a phone.
-           For an app or tool rather than a game, add data-kind="app" and an <span>App</span> tag, and say "Open →". -->
-      <a class="game" href="orbs/">
+           For an app or tool rather than a game, add data-kind="app" and an <span>App</span> tag, and say "Open →".
+           If part of it needs the internet (online matches, a server), add data-online="what needs a connection";
+           the offline panel shows it. Then regenerate offline.json with offline-manifest.mjs so the game can be saved for offline. -->
+      <a class="game" href="orbs/" data-online="Online matches need a connection">
         <img src="img/orbs.jpg" alt="The Orbs of Magic hex battlefield" width="800" height="450">
         <div class="body">
           <h2>🔮 Orbs of Magic</h2>
@@ -231,7 +236,7 @@
         </div>
       </a>
 
-      <a class="game" href="mechscape/">
+      <a class="game" href="mechscape/" data-online="Friends' servers need a connection">
         <img src="img/mechscape.jpg" alt="An android pilot in a walled scrapyard camp with a manufactory, workbench and storage lockers" width="800" height="450">
         <div class="body">
           <h2>🤖 MechScape</h2>
@@ -294,5 +299,6 @@
       apply();
     })();
   </script>
+  <script src="offline.js"></script>
 </body>
 </html>
