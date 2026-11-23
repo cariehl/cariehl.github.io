@@ -202,6 +202,14 @@ function valueEstimate(game, seat, c, melds) {
   return han;
 }
 
+// For focus mode: each opponent's threat (0 none, 1 riichi) and the danger of every tile type
+// to `seat`, on the bots' own scale.
+export function dangerReport(game, seat) {
+  const rem = remaining(game, seat);
+  const threats = [0, 1, 2, 3].map((o) => (o === seat ? 0 : threatOf(game, seat, o)));
+  return { ...dangerMap(game, seat, rem), threats };
+}
+
 // ------------------------------------------------------------------ choosing a discard
 
 function evaluateDiscards(game, seat, persona, ids, forced) {

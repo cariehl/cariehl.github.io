@@ -11,7 +11,7 @@ import * as W from './wallet.js';
 import { amType, amTileName, amTileLongName } from './american/tiles.js';
 import { AmericanGame } from './american/game.js';
 import { createAmericanTable } from './american/table.js';
-import { createFocus } from './focus.js';
+import { createFocus, LAYOUTS } from './focus.js';
 import { setCustomCards, allCards, cardById } from './american/card.js';
 import { loadCustomCards, saveCustomCards, parseCardText, cardToText, TEMPLATE } from './american/custom.js';
 
@@ -31,7 +31,7 @@ const signed = (n) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '0');
 const SETTINGS_KEY = 'lantern-riichi.settings.v1';
 const SAVE_KEY = 'lantern-riichi.save.v1';
 const settings = Object.assign(
-  { mode: 'riichi', amCard: 'lantern-2026', opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, doraTint: true, speed: 'normal', tapMode: 'auto', focus: false, focusTab: 'hands' },
+  { mode: 'riichi', amCard: 'lantern-2026', opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, doraTint: true, speed: 'normal', tapMode: 'auto', focus: false, focusTab: 'hands', focusLayout: 'list' },
   readJSON(SETTINGS_KEY) || {},
 );
 function readJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } }
@@ -1059,6 +1059,7 @@ function settingToggles(card) {
   styleRow(card);
   sel('speed', 'Bot speed', 'How long the bots think', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]);
   sel('tapMode', 'Discarding', 'Tap once, or tap to lift then tap again', [['auto', 'Auto (mouse: once)'], ['one', 'One tap'], ['two', 'Two taps']]);
+  sel('focusLayout', 'Riichi focus layout', 'How focus mode shows your riichi hand: List (advice in words), Table (stats and one discard table), Dashboard (stats, discards, yaku and opponents side by side) or Matrix (every tile in a grid)', LAYOUTS);
 }
 
 // Tile style picker: each choice shows a few tiles drawn in that style.

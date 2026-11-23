@@ -457,3 +457,76 @@ body.focus.american #dock.acting #waits { bottom: auto; }
   body.focus #bar .bar-dora small { display: none; }
   body.focus .bar-round { flex-direction: column; gap: 0; }
 }
+
+/* ---------------------------------------------------------------- riichi focus layouts (proposals) */
+.lx-tbl { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+.lx-tbl th { text-align: left; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.lx-tbl td { padding: 3px 6px; border-bottom: 1px solid rgba(243, 234, 214, 0.06); vertical-align: middle; }
+.lx-tbl .num, .lx-tbl th.num { text-align: right; }
+.lx-tbl td.strong { font-weight: 700; }
+.lx-tbl td.sh { font-weight: 650; }
+.lx-tbl td.sh.win { color: var(--good); }
+.lx-tbl tr.best td { background: rgba(124, 196, 143, 0.1); }
+.lx-tbl tr.best td.strong { color: var(--good); }
+.lx-tbl tr.on td { background: rgba(232, 163, 61, 0.18); }
+.lx-tbl tr.blocked td { opacity: 0.45; }
+.lx-disc tbody tr { cursor: pointer; }
+.lx-tile { width: 1%; padding-right: 2px !important; }
+.lx-tile .tile { --w: 22px; }
+.lx-acc { display: inline-flex; flex-wrap: wrap; gap: 2px 4px; align-items: flex-end; }
+.lx-ac { display: inline-flex; align-items: flex-end; gap: 1px; }
+.lx-ac .tile { --w: 15px; }
+.lx-ac small { font-size: 10px; color: var(--muted); }
+.lx-dg { white-space: nowrap; width: 1%; }
+.lx-dg .bar { display: inline-block; width: 36px; height: 6px; border-radius: 9px; background: rgba(255, 255, 255, 0.08); overflow: hidden; vertical-align: middle; margin-right: 4px; }
+.lx-dg .bar i { display: block; height: 100%; }
+.lx-dg .n { font-size: 11.5px; color: var(--muted); }
+.lx-dg .safe { color: var(--good); font-size: 12px; font-weight: 600; }
+.lx-away { text-align: right; font-weight: 700; }
+.lx-away.near, .lx-away.win { color: var(--good); } .lx-away.mid { color: var(--accent); } .lx-away.no { color: var(--bad); }
+.warn { color: var(--accent); }
+.lx-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 4px; margin-bottom: 6px; }
+.lx-stat { background: rgba(255, 255, 255, 0.045); border-radius: 8px; padding: 4px 8px; min-width: 0; }
+.lx-stat small { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lx-stat b { font: 700 20px/1.1 Georgia, serif; }
+.lx-stat span { display: block; font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lx-stat.win b, .lx-stat.near b { color: var(--good); } .lx-stat.bad b { color: var(--bad); }
+.lx-stat.lx-dora .tiles { display: inline-flex; gap: 2px; margin-left: 6px; vertical-align: 2px; }
+.lx-stat.lx-dora .tile { --w: 14px; }
+.fxl-table .lx-tbl { margin-bottom: 8px; }
+
+/* B: dashboard */
+.lx-dash { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.lx-col h4 { margin: 2px 0 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); }
+.lx-col .lx-tbl { margin-bottom: 6px; font-size: 12.5px; }
+.lx-kv th { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 400; border-bottom-color: rgba(243, 234, 214, 0.06); }
+.lx-kv td { text-align: right; }
+.lx-scores tr.me td { color: var(--accent); }
+.lx-opp tr.hot td { background: rgba(226, 121, 95, 0.12); }
+@media (max-width: 700px) { .lx-dash { grid-template-columns: 1fr 1fr; } .lx-dash .lx-col:first-child { grid-column: 1 / -1; } }
+
+/* C: matrix */
+.lx-matrix { display: grid; grid-template-columns: auto minmax(180px, 1fr); gap: 10px; align-items: start; }
+.lx-mgrid { display: flex; flex-direction: column; gap: 3px; }
+.lx-mrow { display: flex; gap: 3px; align-items: center; }
+.lx-mname { width: 28px; font-size: 11px; color: var(--muted); }
+.lx-mc { --dg: 0; position: relative; width: 50px; height: 40px; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 2px; background: rgba(255, 255, 255, 0.04); border: 1px solid transparent; border-radius: 7px; padding: 0 3px; box-shadow: inset 0 3px 0 rgba(226, 121, 95, var(--dg)); }
+.lx-mc .tile { --w: 20px; }
+.lx-mc.held { background: rgba(232, 163, 61, 0.14); }
+.lx-mc.helps { background: rgba(124, 196, 143, 0.2); border-color: rgba(124, 196, 143, 0.6); }
+.lx-mc.best { border: 2px solid var(--good); }
+.lx-mc.gone .tile { opacity: 0.3; }
+.lx-mc.safe { box-shadow: inset 0 3px 0 rgba(124, 196, 143, 0.6); }
+.lx-nums { display: flex; flex-direction: column; align-items: flex-end; font-size: 10px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.lx-held { font-weight: 700; color: var(--accent); min-height: 1.15em; }
+.lx-cut { font-weight: 800; color: var(--ink); font-size: 11px; min-height: 1.15em; }
+.lx-left { color: var(--muted); }
+.lx-mc.best .lx-cut { color: var(--good); }
+.lx-mside .lx-strip.small { grid-template-columns: 1fr 1fr; }
+.lx-mside .lx-tbl { font-size: 12.5px; }
+.lx-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--muted); margin-top: 6px; }
+.lx-legend .k { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
+.lx-legend .k.held { background: rgba(232, 163, 61, 0.4); } .lx-legend .k.helps { background: rgba(124, 196, 143, 0.5); } .lx-legend .k.best { border: 2px solid var(--good); } .lx-legend .k.dg { box-shadow: inset 0 3px 0 var(--bad); background: rgba(255, 255, 255, 0.08); }
+.lx-legend b { color: var(--ink); } .lx-legend b.hd { color: var(--accent); } .lx-legend b.lft { color: var(--muted); font-weight: 400; }
+@media (max-width: 700px) { .lx-matrix { grid-template-columns: 1fr; } .lx-mc { width: calc((100vw - 70px) / 9); grid-template-columns: 1fr; justify-items: center; height: auto; padding: 2px 0; } .lx-nums { flex-direction: row; gap: 3px; } }
+@media (max-height: 520px) { .lx-mc { height: 34px; } .lx-mrow, .lx-mgrid { gap: 2px; } .lx-mc .tile { --w: 18px; } }

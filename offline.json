@@ -227,8 +227,8 @@
    ]
   },
   "lantern-riichi": {
-   "version": "fea6d5324c72",
-   "bytes": 280096,
+   "version": "65a7bfdbf1e3",
+   "bytes": 305676,
    "files": [
     "lantern-riichi/",
     "lantern-riichi/css/style.css",
@@ -242,6 +242,7 @@
     "lantern-riichi/js/american/table.js",
     "lantern-riichi/js/american/tiles.js",
     "lantern-riichi/js/bots.js",
+    "lantern-riichi/js/focus-riichi.js",
     "lantern-riichi/js/focus.js",
     "lantern-riichi/js/game.js",
     "lantern-riichi/js/history.js",

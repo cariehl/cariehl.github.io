@@ -6,6 +6,10 @@
 
 import { typeOf, counts, isYaochu, suitOf, doraOf } from './tiles.js';
 import { shanten, shantenChiitoi } from './shanten.js';
+import { createRiichiLayouts } from './focus-riichi.js';
+
+// Riichi Hand tab layouts, picked in Settings: the original list, or focus-riichi.js's three.
+export const LAYOUTS = [['list', 'List'], ['table', 'Table'], ['dash', 'Dashboard'], ['matrix', 'Matrix']];
 
 const TABS = [['hands', 'Hands'], ['tiles', 'Tiles'], ['table', 'Table']];
 const SUITS = ['Man', 'Pin', 'Sou'];
@@ -13,6 +17,7 @@ const HONOR_NAMES = ['East', 'South', 'West', 'North', 'White dragon', 'Green dr
 
 export function createFocus(d) {
   const { $, el, settings, ui } = d;
+  const RL = createRiichiLayouts(d);
   let log = [];
 
   // ------------------------------------------------------------ the log
@@ -47,7 +52,13 @@ export function createFocus(d) {
     const keep = body.dataset.tab === tab ? body.scrollTop : 0;
     body.innerHTML = '';
     body.dataset.tab = tab;
-    if (tab === 'hands') (g.mode === 'american' ? d.amHands : riichiHands)(body);
+    const layout = LAYOUTS.some(([k]) => k === settings.focusLayout) ? settings.focusLayout : 'list';
+    body.className = 'fx-body' + (tab === 'hands' && g.mode !== 'american' ? ` fxl-${layout}` : '');
+    if (tab === 'hands') {
+      if (g.mode === 'american') d.amHands(body);
+      else if (layout === 'list') riichiHands(body);
+      else RL[layout](body);
+    }
     else if (tab === 'tiles') tilesTab(body, d.info());
     else tableTab(body, d.info());
     body.scrollTop = keep;
