@@ -13,6 +13,7 @@
   --back-2: #8f2f1f;
   --good: #7cc48f;
   --bad: #e2795f;
+  --gold: #f0c64a;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -306,8 +307,9 @@ body.american .layer > .melds { gap: 0.6cqw; }
 .sec .bar { grid-column: 1 / -1; height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
 .sec .bar i { display: block; height: 100%; background: var(--accent); }
 .sec.full { color: var(--good); } .sec.full .bar i { background: var(--good); }
-.card-hand.made { background: linear-gradient(90deg, rgba(124, 196, 143, 0.08), transparent 70%); }
-.made-tag { color: var(--good); font-weight: 700; }
+/* hands you have made are gold on the card */
+.card-hand.made { background: linear-gradient(90deg, rgba(240, 198, 74, 0.2), rgba(240, 198, 74, 0.04) 80%); box-shadow: inset 3px 0 0 var(--gold); padding-left: 10px; padding-right: 6px; border-radius: 6px; }
+.made-tag { color: var(--gold); font-weight: 700; }
 .card-progress-row { padding: 10px 12px; }
 .card-note { color: var(--accent) !important; margin: 4px 0 0 !important; }
 /* American prompts: the instruction gets its own line, the hint strip clears every button row */

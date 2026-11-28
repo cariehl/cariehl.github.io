@@ -459,7 +459,7 @@ const AM = createAmericanTable({
   seats: () => seats,
   speed: () => SPEED[settings.speed] || 520,
   waitUnpaused: () => waitUnpaused(),
-  oneTap: () => settings.tapMode === 'one' || (settings.tapMode === 'auto' && pointerKind === 'mouse'),
+  discardStyle: () => discardStyle(),
   render: () => render(),
   renderFocus: () => FOCUS.render(),
   updateMatches: () => updateMatches(),
@@ -792,19 +792,30 @@ function waitYaku(hand, p) {
   return { waits, closed, riichi: p.riichi, ron, any };
 }
 
+// How a tap discards (the Discarding setting): 'one' tap, 'two' taps (lift, then tap again),
+// or 'button' (lift, then press Discard). Auto: one click with a mouse, two taps on touch.
+function discardStyle() {
+  if (settings.tapMode === 'auto') return pointerKind === 'mouse' ? 'one' : 'two';
+  return ['one', 'two', 'button'].includes(settings.tapMode) ? settings.tapMode : 'two';
+}
+
 function onTileTap(id) {
   const t = ui.turn;
   if (!t) return;
   const allowed = ui.riichiMode ? t.opts.riichi : t.opts.discards;
   if (!allowed.includes(id)) return;
-  const oneTap = settings.tapMode === 'one' || (settings.tapMode === 'auto' && pointerKind === 'mouse');
-  if (oneTap || ui.selected === id) {
-    ui.hover = null;
-    t.resolve({ type: 'discard', tile: id, riichi: ui.riichiMode });
-    render();
-    return;
-  }
+  const style = discardStyle();
+  if (style === 'button') { ui.selected = ui.selected === id ? null : id; render(); return; }
+  if (style === 'one' || ui.selected === id) { discardTile(id); return; }
   ui.selected = id;
+  render();
+}
+
+function discardTile(id) {
+  const t = ui.turn;
+  if (!t) return;
+  ui.hover = null;
+  t.resolve({ type: 'discard', tile: id, riichi: ui.riichiMode });
   render();
 }
 
@@ -838,6 +849,15 @@ function renderActions() {
     }));
     if (o.kyuushu) box.appendChild(btn('Abort (9 terminals)', 'pass', () => ui.turn.resolve({ type: 'kyuushu' })));
     if (game.h.players[0].riichi && (o.canTsumo || o.ankan.length)) box.appendChild(btn('Discard', 'pass', () => ui.turn.resolve({ type: 'discard', tile: o.drawn })));
+    else if (discardStyle() === 'button') {
+      const allowed = ui.riichiMode ? o.riichi : o.discards;
+      const id = allowed.includes(ui.selected) ? ui.selected : null;
+      const b = id === null ? btn('Discard', 'discard-btn') : chiLikeBtn([typeOf(id)], () => discardTile(id), 'Discard');
+      b.classList.add('discard-btn');
+      b.disabled = id === null;
+      if (b.disabled) b.style.opacity = 0.5;
+      box.appendChild(b);
+    }
   } else if (ui.react) {
     const { opts, tile } = ui.react;
     const t = typeOf(tile);
@@ -1080,7 +1100,7 @@ function settingToggles(card) {
   };
   styleRow(card);
   sel('speed', 'Bot speed', 'How long the bots think', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]);
-  sel('tapMode', 'Discarding', 'Tap once, or tap to lift then tap again', [['auto', 'Auto (mouse: once)'], ['one', 'One tap'], ['two', 'Two taps']]);
+  sel('tapMode', 'Discarding', 'One tap discards; Two taps: tap to lift a tile, tap it again to discard; Discard button: tap to lift a tile, then press Discard', [['auto', 'Auto (mouse: one, touch: two)'], ['one', 'One tap'], ['two', 'Two taps'], ['button', 'Discard button']]);
   sel('focusLayout', 'Riichi focus layout', 'How focus mode shows your riichi hand: List (advice in words), Table (stats and one discard table), Dashboard (stats, discards, yaku and opponents side by side) or Matrix (every tile in a grid)', LAYOUTS);
 }
 

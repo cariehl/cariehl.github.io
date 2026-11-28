@@ -259,13 +259,18 @@ export function createAmericanTable(d) {
     }
     const t = ui.turn;
     if (!t || !t.opts.discards.includes(id)) return;
-    if (d.oneTap() || ui.selected === id) {
-      ui.hover = null;
-      t.resolve({ type: 'discard', tile: id });
-      render();
-      return;
-    }
-    ui.selected = id;
+    const style = d.discardStyle();
+    if (style === 'one' || (style === 'two' && ui.selected === id)) { discard(id); return; }
+    // two taps: lift, tap again; button: a tap lifts the tile (or drops it), Discard confirms
+    ui.selected = style === 'button' && ui.selected === id ? null : id;
+    render();
+  }
+
+  function discard(id) {
+    const t = ui.turn;
+    if (!t || !t.opts.discards.includes(id)) return;
+    ui.hover = null;
+    t.resolve({ type: 'discard', tile: id });
     render();
   }
 
@@ -320,6 +325,13 @@ export function createAmericanTable(d) {
         if (o.swaps.length === 1) ui.turn.resolve({ type: 'swap', owner: o.swaps[0].owner, idx: o.swaps[0].idx });
         else { ui.swapPick = true; render(); }
       }));
+      if (d.discardStyle() === 'button') {
+        const id = o.discards.includes(ui.selected) ? ui.selected : null;
+        const b = id === null ? btn('Discard', 'discard-btn', () => {}) : setBtn([amType(id)], 'Discard', () => discard(id), 'discard-btn');
+        b.disabled = id === null;
+        if (b.disabled) b.style.opacity = 0.5;
+        box.appendChild(b);
+      }
       return;
     }
     if (ui.react) {
@@ -564,8 +576,8 @@ export function createAmericanTable(d) {
   function progressEl(sum) {
     const box = el('div', 'card-progress');
     box.appendChild(el('p', 'sub', sum.made
-      ? `You’ve made <b>${sum.made} of ${sum.total}</b> hands on this card (${sum.wins} win${sum.wins === 1 ? '' : 's'} in ${sum.played} hand${sum.played === 1 ? '' : 's'} played). Made hands are ticked.`
-      : `You haven’t made a hand on this card yet${sum.played ? ` (${sum.played} hands played)` : ''}. Hands you make get ticked here.`));
+      ? `You’ve made <b>${sum.made} of ${sum.total}</b> hands on this card (${sum.wins} win${sum.wins === 1 ? '' : 's'} in ${sum.played} hand${sum.played === 1 ? '' : 's'} played). Made hands are in gold.`
+      : `You haven’t made a hand on this card yet${sum.played ? ` (${sum.played} hands played)` : ''}. Hands you make turn gold here.`));
     const grid = el('div', 'sec-grid');
     for (const s of sum.sections) {
       const it = el('div', 'sec' + (s.made === s.total ? ' full' : ''));
