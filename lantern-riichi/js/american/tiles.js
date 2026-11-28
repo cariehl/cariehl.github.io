@@ -39,9 +39,10 @@ export function amTileLongName(t) {
   return LONG[t - 27];
 }
 
-// Sort order in a hand: suits, then winds, dragons, flowers, jokers.
+// Sort order in a hand: flowers, then suits, winds, dragons, and jokers last.
+const sortKey = (id) => (amType(id) === FLOWER ? -1 : amType(id));
 export function amSort(ids) {
-  return ids.slice().sort((a, b) => amType(a) - amType(b) || a - b);
+  return ids.slice().sort((a, b) => sortKey(a) - sortKey(b) || a - b);
 }
 
 // Test notation: like ../tiles.js ("123m 5p 77z") plus f (flowers) and j (jokers): "2f3j".
