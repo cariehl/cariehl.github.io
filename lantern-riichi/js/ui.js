@@ -31,7 +31,7 @@ const signed = (n) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '0');
 const SETTINGS_KEY = 'lantern-riichi.settings.v1';
 const SAVE_KEY = 'lantern-riichi.save.v1';
 const settings = Object.assign(
-  { mode: 'riichi', amCard: 'lantern-2026', opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, doraTint: true, speed: 'normal', tapMode: 'auto', focus: false, focusTab: 'hands', focusLayout: 'list' },
+  { mode: 'riichi', amCard: 'lantern-2026', opponents: ['mashi', 'fuku', 'kame'], length: 'south', stake: 'low', autoWin: false, noCalls: false, showWaits: true, tileStyle: 'classic', redTint: true, doraTint: true, speed: 'normal', tapMode: 'auto', focus: false, focusTab: 'hands', focusLayout: 'list', focusLow: false },
   readJSON(SETTINGS_KEY) || {},
 );
 function readJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } }
@@ -59,7 +59,28 @@ function applyLooks() {
   document.body.classList.toggle('red-tint', !!settings.redTint);
   document.body.classList.toggle('dora-tint', !!settings.doraTint);
   document.body.classList.toggle('focus', !!settings.focus);
+  document.body.classList.toggle('focus-low', !!settings.focusLow);
   setTileStyle(settings.tileStyle);
+  placeFocusBtn();
+}
+
+// In portrait the ◎ button floats at the bottom right, within thumb reach, just above
+// whatever is pinned to the bottom of the screen (the hand and its buttons, or focus mode's tabs).
+const PORTRAIT = '(max-aspect-ratio: 1/1)';
+function placeFocusBtn() {
+  const g = document.getElementById('game');
+  if (!g || !matchMedia(PORTRAIT).matches) return;
+  const top = (s) => { const e = document.querySelector(s); const r = e && e.getBoundingClientRect(); return r && r.height ? r.top : Infinity; };
+  let t = innerHeight;
+  if (!settings.focus) t = Math.min(top('#dock'), top('#actions'), top('#waits'));
+  else if (settings.focusLow) t = top('#focus .fx-head');
+  g.style.setProperty('--fab-b', `${Math.max(0, Math.round(innerHeight - Math.min(t, innerHeight)))}px`);
+}
+addEventListener('resize', placeFocusBtn);
+matchMedia(PORTRAIT).addEventListener('change', placeFocusBtn);
+if (window.ResizeObserver) {
+  const ro = new ResizeObserver(placeFocusBtn);
+  for (const s of ['#dock', '#actions', '#waits', '#focus .fx-head']) { const e = document.querySelector(s); if (e) ro.observe(e); }
 }
 function myAvatar() {
   return W.cosmeticById(wallet.equipped.avatar) || W.cosmeticById('av-smile');
@@ -1042,6 +1063,7 @@ function settingToggles(card) {
     card.appendChild(row);
   };
   tog('focus', 'Focus mode', 'A big hand and a panel of hands you are close to, tiles left and the table log, in place of the table (also the ◎ button at the table)');
+  tog('focusLow', 'Focus: tiles at the bottom', 'In focus mode, put your hand, its buttons and the tabs at the bottom of the screen, where your thumb reaches them, with the panel above');
   tog('showWaits', 'Show waits', 'Show which tiles finish a ready hand, mark discards that leave you ready, and warn on furiten');
   tog('autoWin', 'Auto-win', 'Declare ron and tsumo for you');
   tog('noCalls', 'No calls', 'Skip pon, chi and kan prompts');

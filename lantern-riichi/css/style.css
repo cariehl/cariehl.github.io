@@ -458,6 +458,24 @@ body.focus.american #dock.acting #waits { bottom: auto; }
   body.focus .bar-round { flex-direction: column; gap: 0; }
 }
 
+/* focus mode, tiles at the bottom (setting): panel on top, then the tabs, then the hand */
+body.focus.focus-low #game { grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: 'bar' 'focus' 'dock'; }
+body.focus.focus-low #focus { flex-direction: column-reverse; }
+body.focus.focus-low .fx-head { border-bottom: 0; border-top: 1px solid var(--line); }
+body.focus.focus-low .fx-body { padding-bottom: 10px; }
+body.focus.focus-low #dock { border-bottom: 0; border-top: 1px solid var(--line); padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+body.focus.focus-low #waits { order: 1; margin: 0 0 2px; }
+body.focus.focus-low #actions { order: 2; }
+body.focus.focus-low #hand { order: 3; }
+
+/* portrait: the ◎ button floats bottom right for one-handed play (--fab-b is set in ui.js) */
+@media (max-aspect-ratio: 1/1) {
+  #focusBtn, body.focus #focusBtn { position: fixed; right: 12px; bottom: calc(max(var(--fab-b, 0px), env(safe-area-inset-bottom)) + 12px); z-index: 7; width: 52px; height: 52px; border-radius: 50%; font-size: 26px; background: #1b2c27; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 0 0 1px var(--line); }
+  body.focus #focusBtn { background: #3a3220; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 0 0 1.5px var(--accent); }
+  body.focus .fx-body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+  body.focus.focus-low .fx-body { padding-bottom: 76px; }
+}
+
 /* ---------------------------------------------------------------- riichi focus layouts (proposals) */
 .lx-tbl { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
 .lx-tbl th { text-align: left; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
@@ -503,7 +521,12 @@ body.focus.american #dock.acting #waits { bottom: auto; }
 .lx-kv td { text-align: right; }
 .lx-scores tr.me td { color: var(--accent); }
 .lx-opp tr.hot td { background: rgba(226, 121, 95, 0.12); }
-@media (max-width: 700px) { .lx-dash { grid-template-columns: 1fr 1fr; } .lx-dash .lx-col:first-child { grid-column: 1 / -1; } }
+@media (max-width: 700px) { .lx-dash { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .lx-dash .lx-col:first-child { grid-column: 1 / -1; } }
+/* phone portrait: one column, so the discard table never pushes the page sideways */
+@media (max-width: 560px) {
+  .lx-dash { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .lx-dash .lx-col:first-child { display: grid; grid-template-columns: minmax(0, 1fr); }
+}
 
 /* C: matrix */
 .lx-matrix { display: grid; grid-template-columns: auto minmax(180px, 1fr); gap: 10px; align-items: start; }
@@ -528,5 +551,5 @@ body.focus.american #dock.acting #waits { bottom: auto; }
 .lx-legend .k { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
 .lx-legend .k.held { background: rgba(232, 163, 61, 0.4); } .lx-legend .k.helps { background: rgba(124, 196, 143, 0.5); } .lx-legend .k.best { border: 2px solid var(--good); } .lx-legend .k.dg { box-shadow: inset 0 3px 0 var(--bad); background: rgba(255, 255, 255, 0.08); }
 .lx-legend b { color: var(--ink); } .lx-legend b.hd { color: var(--accent); } .lx-legend b.lft { color: var(--muted); font-weight: 400; }
-@media (max-width: 700px) { .lx-matrix { grid-template-columns: 1fr; } .lx-mc { width: calc((100vw - 70px) / 9); grid-template-columns: 1fr; justify-items: center; height: auto; padding: 2px 0; } .lx-nums { flex-direction: row; gap: 3px; } }
+@media (max-width: 700px) { .lx-matrix { grid-template-columns: 1fr; } .lx-mc { width: calc((100vw - 74px) / 9); grid-template-columns: 1fr; justify-items: center; height: auto; padding: 2px 0; } .lx-nums { flex-direction: row; gap: 3px; } }
 @media (max-height: 520px) { .lx-mc { height: 34px; } .lx-mrow, .lx-mgrid { gap: 2px; } .lx-mc .tile { --w: 18px; } }
